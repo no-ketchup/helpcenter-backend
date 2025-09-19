@@ -5,6 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -37,11 +38,19 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install dependencies
         run: pip install --no-cache-dir -r requirements.txt
 
       - name: Run tests
-        run: tests -v
+        run: pytest -v
 
   docker-build:
     runs-on: ubuntu-latest
@@ -51,4 +60,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -t helpcenter-backend .
+        run: docker build -t helpcenter-backend:${{ github.sha }} .
