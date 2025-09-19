@@ -1,0 +1,8 @@
+fastapi
+strawberry-graphql[fastapi]
+sqlmodel
+sqlalchemy
+alembic
+psycopg2-binary  # Postgres driver
+uvicorn[standard]
+python-dotenv

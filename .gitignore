@@ -1,0 +1,62 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+
+# ---- Virtual Environment ----
+.venv/
+env/
+venv/
+ENV/
+
+# ---- Byte-compiled ----
+*.so
+
+# ---- Logs ----
+*.log
+*.out
+*.err
+
+# ---- Alembic ----
+alembic/versions/*.pyc
+alembic/versions/__pycache__/
+
+# ---- Local DB/data ----
+db_data/
+*.db
+*.sqlite3
+
+# ---- Test / coverage ----
+.coverage
+coverage/
+htmlcov/
+.cache/
+.pytest_cache/
+.tox/
+.mypy_cache/
+.pyre/
+.dmypy.json
+
+# ---- IDE/editor ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ---- Docker ----
+# ignore local build cruft
+**/docker-compose.override.yml
+**/.docker/
+**/.dockerignore
+
+# ---- Env files ----
+.env
+.env.*
