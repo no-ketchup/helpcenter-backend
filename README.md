@@ -37,73 +37,10 @@ Supports development, testing, and production via Docker Compose with environmen
 
 ## Setup
 
-### Prerequisites
-- Docker + Docker Compose
-- Make (optional but recommended)
-
-### Environment
-Copy `.env` files and adjust if needed:
-```bash
-cp .env .env.local      # For custom dev overrides
-```
-
----
-
-## Development
-
-Start backend + DB:
-```bash
-make up
-```
-
-Stop & clean up:
-```bash
-make down
-```
-
-Run DB migrations:
-```bash
-make migrate
-```
-
----
-
-## Testing
-
-Run interactive tests (containers kept alive for debugging):
-```bash
-make test
-```
-
-Run CI-style tests (containers exit after run):
-```bash
-make ci-test
-```
-
----
-
-## Production
-
-Build with production config:
-```bash
-make build ENV_FILE=.env.prod
-```
-
-Deploy (with `.env.prod`):
-```bash
-ENV_FILE=.env.prod make up
-```
-
----
-
-## Secrets
-- In production, never commit secrets to `.env.prod`.  
-- Use CI/CD secrets or a secret manager to inject sensitive values (e.g., `SECRET_KEY`, DB credentials).
-
----
-
-## Roadmap
-- Admin interface for content management (create/edit/delete)
-- Rich text support in GraphQL schema
-- Blob storage integration (media uploads)
-- Deployment scripts for AWS/GCP
+### ### Makefile Targets
+- `build` / `up` / `down` — manage containers
+- `migrate` — run Alembic migrations
+- `test` / `ci-test` — run test suite (local or CI mode)
+- `logs` — tail container logs
+- `shell` — open backend shell
+- `prod-*` — production deploy helpers
