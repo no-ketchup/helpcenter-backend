@@ -6,3 +6,6 @@ alembic
 psycopg2-binary  # Postgres driver
 uvicorn[standard]
 python-dotenv
+pytest
+httpx
+pytest-asyncio

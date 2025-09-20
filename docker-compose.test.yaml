@@ -1,0 +1,27 @@
+services:
+  db_test:
+    image: postgres:16
+    container_name: helpcenter-db-test
+    environment:
+      POSTGRES_USER: helpcenter_testuser
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: helpcenter_test
+    ports:
+      - "5433:5432"   # avoid conflict with dev DB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helpcenter_testuser -d helpcenter_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend_test:
+    build:
+      context: .
+    container_name: helpcenter-backend-test
+    command: >
+      sh -c "alembic upgrade head && pytest -v"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://helpcenter_testuser:password@db_test:5432/helpcenter_test
+    depends_on:
+      db_test:
+        condition: service_healthy
