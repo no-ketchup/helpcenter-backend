@@ -1,9 +1,10 @@
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy import DateTime
 from typing import List, Optional
 from uuid import UUID, uuid4
 from datetime import datetime
-from .utils.time import utcnow
+from app.utils.time import utcnow
 
 
 class GuideCategoryLink(SQLModel, table=True):
@@ -24,10 +25,13 @@ class Category(SQLModel, table=True):
     description: Optional[str] = Field(default=None)
     slug: str = Field(unique=True, index=True, nullable=False)
 
-    created_at: datetime = Field(default_factory=utcnow, nullable=False)
-    updated_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, default=utcnow)
+    )
+    updated_at: Optional[datetime] = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
 
-    # relationships
     guides: List["UserGuide"] = Relationship(
         back_populates="categories", link_model=GuideCategoryLink
     )
@@ -40,8 +44,12 @@ class Media(SQLModel, table=True):
     alt: Optional[str] = Field(default=None)
     url: str = Field(nullable=False)
 
-    created_at: datetime = Field(default_factory=utcnow, nullable=False)
-    updated_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, default=utcnow)
+    )
+    updated_at: Optional[datetime] = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
 
     guides: List["UserGuide"] = Relationship(
         back_populates="media", link_model=GuideMediaLink
@@ -55,18 +63,20 @@ class UserGuide(SQLModel, table=True):
     title: str = Field(nullable=False)
     slug: str = Field(unique=True, index=True, nullable=False)
 
-    # JSON body, not nullable
     body: dict = Field(sa_column=Column(JSON, nullable=False))
 
     estimated_read_time: int = Field(nullable=False)
-    created_at: datetime = Field(default_factory=utcnow, nullable=False)
-    updated_at: Optional[datetime] = None
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, default=utcnow)
+    )
+    updated_at: Optional[datetime] = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
 
-    # relationships
     categories: List[Category] = Relationship(
         back_populates="guides", link_model=GuideCategoryLink
     )
-    media: List[Media] = Relationship(
+    media: List["Media"] = Relationship(
         back_populates="guides", link_model=GuideMediaLink
     )
 
@@ -80,4 +90,6 @@ class Feedback(SQLModel, table=True):
     message: str = Field(nullable=False)
     expect_reply: bool = Field(default=False)
 
-    created_at: datetime = Field(default_factory=utcnow, nullable=False)
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, default=utcnow)
+    )

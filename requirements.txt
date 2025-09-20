@@ -9,3 +9,6 @@ python-dotenv
 pytest
 httpx
 pytest-asyncio
+typer
+pydantic-settings
+asyncpg
