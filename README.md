@@ -18,19 +18,19 @@ Supports development, testing, and production via Docker Compose with environmen
 ## Project Structure
 ```
 .
-├── alembic/            # Alembic migrations
-├── app/                # Application code
-│   ├── main.py         # FastAPI entrypoint
-│   ├── db.py           # DB session & engine
-│   ├── schema.py       # GraphQL schema
-│   └── resolvers.py    # Queries & mutations
-├── docker-compose.yaml # Unified compose file
-├── Dockerfile
-├── Makefile
-├── requirements.txt
-├── .env                # Development settings
-├── .env.test           # Test settings
-└── .env.prod           # Production settings
+├── Dockerfile              # Backend container build
+├── Makefile                # Dev/CI commands
+├── README.md
+├── app/                    # Application source
+│   ├── core/               # Core setup (db, main, settings)
+│   ├── data/               # Seeds / data bootstrap
+│   ├── domain/             # Models, resolvers, schema
+│   ├── mappers/            # Placeholder for data mappers
+│   ├── migrations/         # Alembic migrations
+│   └── utils/              # Helpers
+├── docker-compose.yaml     # Local stack (Postgres + backend)
+├── requirements.txt        # Python dependencies
+└── tests/                  # Pytest suite
 ```
 
 ---
