@@ -3,28 +3,30 @@ services:
     image: postgres:16
     restart: unless-stopped
     container_name: helpcenter-db
-    env_file: ${ENV_FILE:-.env}
+    env_file: .env.local
     volumes:
       - ${DB_VOLUME:-db_data}:/var/lib/postgresql/data
     ports:
       - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-helpcenter_devuser} -d ${POSTGRES_DB:-helpcenter_devdb}"]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
   backend:
-    environment:
-      DOCKER_ENV: "1"
     build:
       context: .
     container_name: helpcenter-backend
     restart: unless-stopped
+    environment:
+      DOCKER_ENV: "1"
+      ENVIRONMENT: ${ENVIRONMENT}
     depends_on:
       db:
         condition: service_healthy
-    env_file: ${ENV_FILE:-.env}
+    env_file:
+      - .env.local
     volumes:
       - .:/app
     ports:

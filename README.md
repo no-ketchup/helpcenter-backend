@@ -14,3 +14,8 @@ Supports development, testing, and production via Docker Compose with environmen
 - Makefile for common workflows
 
 ---
+
+## Lesson learn
+
+When developing using Docker Compose, .env.dev vs .env.test separation just keeps bleeding into each other because Compose decides what gets mounted at runtime.
+Don't fight with the container orchestrator. Let it drive.

@@ -1,5 +1,6 @@
+uliweb-alembic
 fastapi
-strawberry-graphql[fastapi]
+strawberry-graphql[fastapi]>=0.205.0
 sqlmodel
 sqlalchemy
 alembic
@@ -7,8 +8,9 @@ psycopg2-binary  # Postgres driver
 uvicorn[standard]
 python-dotenv
 pytest
-httpx
+httpx>=0.28.0
 pytest-asyncio
 typer
 pydantic-settings
 asyncpg
+pydantic

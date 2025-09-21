@@ -1,23 +1,64 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
+
 from app.core.db import get_session
-from app.domain.models import Category
-from app.mappers.category import CategoryMapper
+from app.domain.dtos.category import (
+    CategoryCreateDTO,
+    CategoryUpdateDTO,
+    CategoryReadDTO,
+)
+from app.core.editor_guard import verify_dev_editor_key
+from app.services.category import CategoryService
 
-router = APIRouter(prefix="/dev-editor", tags=["dev-editor"])
-category_mapper = CategoryMapper()
+router = APIRouter(
+    prefix="/dev-editor",
+    dependencies=[Depends(verify_dev_editor_key)],
+    tags=["dev-editor"],
+)
 
-@router.post("/categories", response_model=Category)
-async def create_category(category: Category, session: AsyncSession = Depends(get_session)):
-    return await category_mapper.create(session, category)
+service = CategoryService()
 
-@router.get("/categories", response_model=list[Category])
+
+@router.post("/categories", response_model=CategoryReadDTO)
+async def create_category(
+    payload: CategoryCreateDTO, session: AsyncSession = Depends(get_session)
+):
+    return await service.create_category(session, payload)
+
+
+@router.get("/categories", response_model=list[CategoryReadDTO])
 async def list_categories(session: AsyncSession = Depends(get_session)):
-    return await category_mapper.list(session)
+    return await service.list_categories(session)
 
-@router.get("/categories/{category_id}", response_model=Category)
+
+@router.get("/categories/{category_id}", response_model=CategoryReadDTO)
 async def get_category(category_id: str, session: AsyncSession = Depends(get_session)):
-    category = await category_mapper.get(session, category_id)
-    if not category:
+    dto = await service.get_category(session, category_id)
+    if not dto:
         raise HTTPException(404, "Category not found")
-    return category
+    return dto
+
+
+@router.get("/categories/slug/{slug}", response_model=CategoryReadDTO)
+async def get_category_by_slug(slug: str, session: AsyncSession = Depends(get_session)):
+    dto = await service.get_category_by_slug(session, slug)
+    if not dto:
+        raise HTTPException(404, "Category not found")
+    return dto
+
+
+@router.put("/categories/{category_id}", response_model=CategoryReadDTO)
+async def update_category(
+    category_id: str,
+    payload: CategoryUpdateDTO,
+    session: AsyncSession = Depends(get_session),
+):
+    return await service.update_category(session, category_id, payload)
+
+
+@router.delete("/categories/{category_id}")
+async def delete_category(
+    category_id: str, session: AsyncSession = Depends(get_session)
+):
+    await service.delete_category(session, category_id)
+    return {"detail": "Category deleted"}

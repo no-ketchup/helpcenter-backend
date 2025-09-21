@@ -18,7 +18,7 @@ ENV/
 # ---- Byte-compiled ----
 *.so
 
-# ---- Logs ----
+# ---- Logs ---
 *.log
 *.out
 *.err
@@ -58,5 +58,5 @@ htmlcov/
 **/.dockerignore
 
 # ---- Env files ----
-.env
+.env.local
 .env.*
