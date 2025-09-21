@@ -1,53 +1,90 @@
 # Default environment file
 ENV_FILE ?= .env
 
-# Compose base command
+# Base docker-compose command
 COMPOSE = docker compose --env-file $(ENV_FILE)
 
-# Build containers
-build:
+# Alembic command (always point to root alembic.ini)
+ALEMBIC = $(COMPOSE) run --rm -e PYTHONPATH=/app backend alembic -c alembic.ini
+
+# -------------------------------
+# Phony targets
+# -------------------------------
+.PHONY: help migrate revision build up down test ci-test logs shell prod-up prod-down prod-migrate
+
+# -------------------------------
+# Help
+# -------------------------------
+help: ## Show this help
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Available targets:"
+	@grep -E '^[a-zA-Z0-9_-]+:.*?##' $(MAKEFILE_LIST) \
+		| sed -E 's/:.*##/: ##/' \
+		| column -t -s '##'
+
+# -------------------------------
+# Database & Migrations
+# -------------------------------
+
+migrate: ## Run latest migrations
+	$(ALEMBIC) upgrade head
+
+revision: ## Create new migration (usage: make revision m="add users table")
+	$(ALEMBIC) revision --autogenerate -m "$(m)"
+
+# -------------------------------
+# Containers
+# -------------------------------
+
+build: ## Build images
 	$(COMPOSE) build
 
-# Start stack in background
-up:
+up: ## Start stack
 	$(COMPOSE) up -d
 
-# Stop stack and clean up
-down:
+down: ## Stop stack & clean
 	$(COMPOSE) down --volumes --remove-orphans
 
-# Run migrations
-migrate:
-	$(COMPOSE) run --rm backend alembic upgrade head
+clean: ## Clean up volumes and images
+	docker compose down -v --remove-orphans
+	docker system prune -f
 
-# Run tests (always reset DB volume)
-test:
+# -------------------------------
+# Testing
+# -------------------------------
+
+test: ## Run tests (reset DB every time)
 	$(COMPOSE) down -v --remove-orphans
 	$(COMPOSE) up --build -d
-	$(COMPOSE) exec -T backend alembic upgrade head
+	$(MAKE) migrate ENV_FILE=$(ENV_FILE)
 	$(COMPOSE) exec -T backend pytest -v
 	$(COMPOSE) down -v --remove-orphans
 
-# Run tests like CI (always reset, aborts on exit)
-ci-test:
-	$(COMPOSE) down -v --remove-orphans
-	ENV_FILE=.env.test $(COMPOSE) up --build --abort-on-container-exit
+ci-test: ## CI mode: reset, abort on exit, propagate exit code
+	ENV_FILE=.env.test $(COMPOSE) down -v --remove-orphans
+	ENV_FILE=.env.test $(COMPOSE) up --build --abort-on-container-exit --exit-code-from backend
 	ENV_FILE=.env.test $(COMPOSE) down --volumes --remove-orphans
 
-# Tail logs
-logs:
+# -------------------------------
+# Utilities
+# -------------------------------
+
+logs: ## Tail logs
 	$(COMPOSE) logs -f
 
-# Open shell inside backend container
-shell:
+shell: ## Open shell in backend
 	$(COMPOSE) exec backend bash
 
-# Production deploy (NeonDB)
-prod-up:
+# -------------------------------
+# Production (NeonDB)
+# -------------------------------
+
+prod-up: ## Start stack with .env.prod
 	ENV_FILE=.env.prod $(COMPOSE) up -d
 
-prod-down:
+prod-down: ## Stop stack & clean with .env.prod
 	ENV_FILE=.env.prod $(COMPOSE) down --volumes --remove-orphans
 
-prod-migrate:
-	ENV_FILE=.env.prod $(COMPOSE) run --rm backend alembic upgrade head
+prod-migrate: ## Run migrations with .env.prod
+	ENV_FILE=.env.prod $(ALEMBIC) upgrade head
