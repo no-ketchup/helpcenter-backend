@@ -37,6 +37,7 @@ if creds_json := os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON"):
     tmp.flush()
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
