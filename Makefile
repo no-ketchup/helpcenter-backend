@@ -31,6 +31,9 @@ migrate-prod: ## Run migrations on production DB
 build: ## Build Docker images
 	$(COMPOSE) build
 
+build-prod: ## Build production Docker image
+	docker build -f Dockerfile.prod -t helpcenter-backend:latest .
+
 up: ## Start all services
 	$(COMPOSE) up -d
 
@@ -118,7 +121,7 @@ check-migrations: ## Check migration status
 dev: ## Start development environment (backend + db + redis)
 	$(COMPOSE) up -d db redis
 	sleep 3
-	$(MAKE) migrate
+	$(COMPOSE) run --rm -e PYTHONPATH=/code backend python3 scripts/migrate.py --env development
 	$(COMPOSE) up backend
 
 dev-stop: ## Stop development environment

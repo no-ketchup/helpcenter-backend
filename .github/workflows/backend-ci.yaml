@@ -9,6 +9,10 @@ on:
 env:
   PYTHON_VERSION: '3.11'
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -57,16 +61,24 @@ jobs:
     - name: Run type checking
       run: mypy app/ --ignore-missing-imports
 
-    - name: Run database migrations (test)
-      run: |
-        python scripts/migrate.py --env test --database-url postgresql://postgres:postgres@localhost:5432/test_db
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-    - name: Run tests
+    - name: Run tests using Makefile
       run: |
-        pytest tests/ -v --cov=app --cov-report=xml --cov-report=html
-      env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-        ENVIRONMENT: test
+        # Set up environment for CI
+        export TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+        export ENVIRONMENT=test
+        export PYTHONPATH=/code
+        export PYTHONDONTWRITEBYTECODE=1
+        
+        # Run tests using Docker (like local development)
+        docker compose -f docker-compose.yaml run --rm \
+          -e PYTHONPATH=/code \
+          -e ENVIRONMENT=test \
+          -e PYTHONDONTWRITEBYTECODE=1 \
+          -e TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@localhost:5432/test_db \
+          backend bash -lc 'cd /code && python3 scripts/migrate.py --env test --database-url postgresql+asyncpg://postgres:postgres@localhost:5432/test_db && pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v --cov=app --cov-report=xml --cov-report=html'
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -76,6 +88,9 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -89,7 +104,7 @@ jobs:
         output: 'trivy-results.sarif'
 
     - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: 'trivy-results.sarif'
 
@@ -102,28 +117,33 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-    - name: Install dependencies
+    - name: Build Docker image using Makefile
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run database migrations
-      run: |
-        python scripts/migrate.py --env production --database-url ${{ secrets.DATABASE_URL }}
-
-    - name: Build Docker image
-      run: |
-        docker build -f Dockerfile.prod -t helpcenter-backend:${{ github.sha }} .
+        # Set up environment
+        export ENV_FILE=.env.prod
+        export DATABASE_URL_ASYNC=${{ secrets.DATABASE_URL }}
+        export REDIS_URL=${{ secrets.REDIS_URL }}
+        export SECRET_KEY=${{ secrets.SECRET_KEY }}
+        export DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }}
+        export GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}
+        export GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        export ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+        
+        # Build production Docker image
+        make build-prod
 
     - name: Test Docker image
       run: |
-        docker run --rm -d --name test-container -p 8000:8000 helpcenter-backend:${{ github.sha }}
-        sleep 10
+        # Test the built image
+        docker run --rm -d --name test-container -p 8000:8000 \
+          -e DATABASE_URL_ASYNC=${{ secrets.DATABASE_URL }} \
+          -e REDIS_URL=${{ secrets.REDIS_URL }} \
+          -e SECRET_KEY=${{ secrets.SECRET_KEY }} \
+          helpcenter-backend:latest
+        sleep 15
         curl -f http://localhost:8000/health || exit 1
         docker stop test-container
 
@@ -137,11 +157,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Set up Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+
     - name: Deploy to Cloud Run (Staging)
       run: |
-        echo "Deploying to Cloud Run staging..."
-        # Cloud Run deployment would go here
-        # gcloud run deploy helpcenter-backend-staging --source . --region us-central1
+        export GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }}
+        export GOOGLE_CLOUD_REGION=${{ secrets.GOOGLE_CLOUD_REGION }}
+        export DATABASE_URL_ASYNC=${{ secrets.DATABASE_URL }}
+        export REDIS_URL=${{ secrets.REDIS_URL }}
+        export SECRET_KEY=${{ secrets.SECRET_KEY }}
+        export DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }}
+        export GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}
+        export ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+        export GOOGLE_APPLICATION_CREDENTIALS_SECRET=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_SECRET }}
+        
+        ./scripts/deploy-cloud-run.sh staging
 
   deploy-production:
     needs: build
@@ -153,8 +187,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Set up Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+
     - name: Deploy to Cloud Run (Production)
       run: |
-        echo "Deploying to Cloud Run production..."
-        # Cloud Run deployment would go here
-        # gcloud run deploy helpcenter-backend --source . --region us-central1
+        export GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }}
+        export GOOGLE_CLOUD_REGION=${{ secrets.GOOGLE_CLOUD_REGION }}
+        export DATABASE_URL_ASYNC=${{ secrets.DATABASE_URL }}
+        export REDIS_URL=${{ secrets.REDIS_URL }}
+        export SECRET_KEY=${{ secrets.SECRET_KEY }}
+        export DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }}
+        export GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}
+        export ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+        export GOOGLE_APPLICATION_CREDENTIALS_SECRET=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_SECRET }}
+        
+        ./scripts/deploy-cloud-run.sh production

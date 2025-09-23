@@ -16,9 +16,6 @@ from app.core import db as core_db
 from app.main import app
 
 
-# -------------------------------
-# Use a single event loop for the entire test session
-# -------------------------------
 @pytest.fixture(scope="session")
 def event_loop():
     loop = asyncio.new_event_loop()
@@ -26,9 +23,6 @@ def event_loop():
     loop.close()
 
 
-# -------------------------------
-# Apply Alembic migrations once
-# -------------------------------
 @pytest.fixture(scope="session", autouse=True)
 def apply_migrations():
     cfg = Config("alembic.ini")
@@ -38,9 +32,6 @@ def apply_migrations():
     yield
 
 
-# -------------------------------
-# Session-scoped engine + sessionmaker
-# -------------------------------
 @pytest_asyncio.fixture(scope="session")
 async def async_engine():
     engine = core_db.get_engine()
@@ -56,9 +47,6 @@ async def async_sessionmaker(async_engine):
     return factory
 
 
-# -------------------------------
-# Database cleanup between tests
-# -------------------------------
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup_database(async_sessionmaker):
     """Clean up database before each test."""
@@ -75,9 +63,6 @@ async def cleanup_database(async_sessionmaker):
     yield
 
 
-# -------------------------------
-# Override DB dependency to reuse sessionmaker
-# -------------------------------
 @pytest_asyncio.fixture(autouse=True)
 async def override_get_session(async_sessionmaker):
     async def _override():
@@ -89,9 +74,6 @@ async def override_get_session(async_sessionmaker):
     app.dependency_overrides.clear()
 
 
-# -------------------------------
-# HTTP client
-# -------------------------------
 @pytest_asyncio.fixture
 async def client():
     transport = ASGITransport(app=app)
@@ -99,9 +81,6 @@ async def client():
         yield ac
 
 
-# -------------------------------
-# Editor headers
-# -------------------------------
 @pytest.fixture
 def editor_headers():
     return {"x-dev-editor-key": settings.DEV_EDITOR_KEY}

@@ -1,26 +1,48 @@
 # Help Center Backend
 
-A production-ready help center backend built with FastAPI, GraphQL, and PostgreSQL. Designed for learning modern CI/CD practices with a real-world application.
+A mostly production-ready help center backend built with FastAPI, GraphQL, and PostgreSQL. Features a complete CI/CD pipeline with Docker, GitHub Actions, and Cloud Run deployment.
+
+## Background & Motivation
+
+This backend started as an experiment to fill the gaps left by no-code (would not recommend) and SaaS headless CMS products.  
+I tested multiple approaches, from commercial SaaS solutions to a self-hosted Payload CMS instance — but each came with trade-offs that didn’t fit the needs of a robust help center:
+
+- Limited flexibility for custom editor features
+- Harder integration with GraphQL and domain-driven design
+- Limited or locked-down CI/CD workflows
+
+I ended up building the backend myself.  
+The real intention of this project is to explore and implement **a solid CI/CD pipeline in a more realistic environment**:
+
+- Dockerized development and production workflows  
+- GitHub Actions for testing, linting, and security scans  
+- Automated builds and deployments to Cloud Run  
+- Environment-specific configurations with secrets management  
+
+By treating this as a production-grade project, I get to explore what it takes to ship reliable backend services in modern environments and do my homework for future projects.
 
 ## Architecture
 
 - **Backend**: FastAPI + GraphQL (Strawberry)
-- **Database**: Neon DB (PostgreSQL)
+- **Database**: Neon DB (PostgreSQL) with connection pooling
+- **Cache**: Redis for rate limiting and session management
 - **Media Storage**: Google Cloud Storage
-- **Deployment**: Google Cloud Run
-- **CI/CD**: GitHub Actions
-- **Frontend**: Vercel
+- **Deployment**: Google Cloud Run with automated CI/CD
+- **CI/CD**: GitHub Actions with environment-specific deployments
+- **Frontend**: Vercel (Next.js)
 
 ## Features
 
-- **GraphQL API**: Type-safe queries and mutations
-- **REST API**: Developer editor endpoints
-- **Rich Text Support**: JSON-based content blocks
+- **GraphQL API**: Type-safe queries and mutations with Strawberry
+- **REST API**: Developer editor endpoints for content management
+- **Rich Text Support**: JSON-based content blocks for guides
 - **Media Management**: File upload with GCS integration
-- **Structured Logging**: JSON logs with correlation IDs
-- **Input Validation**: Comprehensive data validation
-- **Test Coverage**: Full test suite with async support
-- **Docker Support**: Containerized development and production
+- **Rate Limiting**: Redis-based rate limiting with different limits per endpoint
+- **Structured Logging**: JSON logs with correlation IDs and request tracking
+- **Input Validation**: Comprehensive Pydantic validation with custom validators
+- **Test Coverage**: Full test suite with async support and database isolation
+- **Docker Support**: Multi-stage builds for development and production
+- **CLI Editor**: Terminal-based content management tool
 
 ## Quick Start
 
@@ -37,38 +59,30 @@ A production-ready help center backend built with FastAPI, GraphQL, and PostgreS
 git clone <your-repo>
 cd helpcenter-backend
 cp env.example .env.local
+# Edit .env.local with your actual values
 ```
 
 ### 2. Configure Environment
 
-Update `.env.local` with your credentials:
+The `env.example` file contains all required environment variables with placeholder values. Copy it to `.env.local` and update with your actual values:
 
-```bash
-# Database
-DATABASE_URL=postgresql://username:password@ep-xxx.us-east-1.aws.neon.tech/helpcenter?sslmode=require
-
-# Google Cloud Storage
-GCS_BUCKET_NAME=your-helpcenter-bucket
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-
-# Application
-ENVIRONMENT=development
-LOG_LEVEL=INFO
-SECRET_KEY=your-secret-key
-DEV_EDITOR_KEY=dev-editor-key
-```
+- **Database**: Set your Neon DB connection details
+- **Redis**: For rate limiting (use `redis://redis:6379` for local development)
+- **Google Cloud**: Set your GCS bucket and service account
+- **Security**: Generate strong secret keys
+- **CORS**: Add your frontend domains
 
 ### 3. Run with Docker
 
 ```bash
-# Start database
-make up
-
-# Run migrations
-make migrate
+# Start development environment
+make dev
 
 # Run tests
 make test
+
+# Run quick tests (no cleanup)
+make test-quick
 ```
 
 ## Development
@@ -77,13 +91,19 @@ make test
 
 ```bash
 make help          # Show all commands
-make up            # Start services
-make down          # Stop services
-make test          # Run tests
-make migrate       # Run migrations
+make dev           # Start development environment
+make dev-stop      # Stop development environment
+make test          # Run full test suite with cleanup
+make test-quick    # Run tests without cleanup
+make migrate       # Run database migrations
+make build         # Build Docker images
+make build-prod    # Build production Docker image
 make logs          # View logs
 make shell         # Open container shell
 make editor        # Run the help center editor
+make health        # Check API health
+make lint          # Run code linting
+make format        # Format code with black
 ```
 
 ### Project Structure
@@ -91,31 +111,36 @@ make editor        # Run the help center editor
 ```
 app/
 ├── core/           # Core functionality
-│   ├── db.py      # Database configuration
-│   ├── logging.py # Structured logging
-│   ├── middleware.py # Request middleware
-│   └── validation.py # Input validation
-├── domain/         # Domain logic
+│   ├── db.py      # Database configuration with connection pooling
+│   ├── logging.py # Structured JSON logging
+│   ├── middleware.py # Request/response middleware
+│   ├── rate_limiting.py # Redis-based rate limiting
+│   └── settings.py # Application settings
+├── domain/         # Domain logic (DDD structure)
 │   ├── models/    # SQLModel entities
 │   ├── dtos/      # Data transfer objects
 │   ├── resolvers/ # GraphQL resolvers
-│   └── schema/    # GraphQL schemas
+│   ├── schema/    # GraphQL schemas
+│   └── rest/      # REST API endpoints
 ├── repositories/   # Data access layer
 ├── services/       # Business logic
 └── main.py        # FastAPI application
 
 scripts/
-├── demo/          # Demo scripts
-├── test/          # Test utilities
-└── deploy.sh      # Deployment script
+├── demo/          # Demo scripts and CLI editor
+├── migrate.py     # Database migration script
+└── deploy-cloud-run.sh # Cloud Run deployment
 
-docs/              # Documentation
-tests/             # Test suite
+tests/             # Comprehensive test suite
+├── categories/    # Category tests (REST + GraphQL)
+├── guides/        # Guide tests (REST + GraphQL)
+├── media/         # Media tests (REST + GraphQL)
+└── graphql/       # GraphQL integration tests
 ```
 
-## Help Center Editor
+## CLI Editor
 
-The project includes a terminal-based editor for managing content:
+Terminal-based content management tool for creating and managing help center content:
 
 ```bash
 make editor
@@ -123,12 +148,13 @@ make editor
 
 ### Editor Features
 
-- **Global Exit Commands**: Type `q`, `quit`, or `exit` at any prompt
-- **Keyboard Interrupt**: Press `Ctrl+C` to exit
-- **Help System**: Type `h` for help information
-- **Rich Text Support**: JSON-based content blocks
-- **Media Management**: Upload and attach files to guides
-- **GraphQL Testing**: Test queries directly from the editor
+- Global exit commands (`q`, `quit`, `exit`)
+- Keyboard interrupt support (`Ctrl+C`)
+- Help system (`h` command)
+- Rich text support with JSON content blocks
+- Media file upload and management
+- GraphQL query testing
+- Organized content viewing
 
 ### Editor Commands
 
@@ -142,20 +168,26 @@ make editor
 
 ### GraphQL
 
-- `POST /graphql` - GraphQL endpoint
+- `POST /graphql` - GraphQL endpoint with rate limiting
+- Queries: `getCategories`, `getCategory`, `getGuides`, `getGuide`
+- Mutations: `submitFeedback`
 
 ### REST API
 
-- `GET /health` - Health check
-- `POST /dev-editor/categories` - Create category
-- `POST /dev-editor/guides` - Create guide
-- `POST /dev-editor/media/upload` - Upload media
+- `GET /health` - Health check with rate limiting
+- `POST /dev-editor/categories` - Create category (dev editor)
+- `GET /dev-editor/categories` - List categories (dev editor)
+- `POST /dev-editor/guides` - Create guide (dev editor)
+- `POST /dev-editor/media/upload` - Upload media (dev editor)
 
 ## Testing
 
 ```bash
-# Run all tests
+# Run full test suite with cleanup
 make test
+
+# Run quick tests (no cleanup)
+make test-quick
 
 # Run specific test file
 docker compose run --rm -e ENVIRONMENT=test backend pytest tests/categories/
@@ -164,9 +196,28 @@ docker compose run --rm -e ENVIRONMENT=test backend pytest tests/categories/
 docker compose run --rm -e ENVIRONMENT=test backend pytest --cov=app tests/
 ```
 
+### Test Coverage
+
+- **Categories**: REST and GraphQL endpoints
+- **Guides**: REST and GraphQL endpoints with rich text
+- **Media**: File upload and management
+- **GraphQL**: Integration tests
+- **Health**: Health check endpoint
+- **Rate Limiting**: Rate limit enforcement
+- **Database**: Test isolation with cleanup
+
 ## Deployment
 
-### Google Cloud Run
+### Automated CI/CD
+
+The project includes a complete CI/CD pipeline with GitHub Actions:
+
+1. **Test**: Runs full test suite with Docker
+2. **Security Scan**: Trivy vulnerability scanning
+3. **Build**: Creates production Docker image
+4. **Deploy**: Automatically deploys to Cloud Run
+
+### Manual Deployment
 
 1. **Setup GCS Bucket**:
    ```bash
@@ -174,42 +225,44 @@ docker compose run --rm -e ENVIRONMENT=test backend pytest --cov=app tests/
    gsutil iam ch allUsers:objectViewer gs://your-helpcenter-bucket
    ```
 
-2. **Deploy**:
+2. **Deploy with Script**:
    ```bash
-   gcloud run deploy helpcenter-backend \
-     --source . \
-     --platform managed \
-     --region us-central1 \
-     --allow-unauthenticated
+   ./scripts/deploy-cloud-run.sh production
    ```
 
 ### Environment Variables
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `DATABASE_URL` | Neon DB connection string | Yes |
+| `DATABASE_URL_ASYNC` | Neon DB async connection string | Yes |
+| `REDIS_URL` | Redis connection string | Yes |
 | `GCS_BUCKET_NAME` | Google Cloud Storage bucket | Yes |
 | `GOOGLE_APPLICATION_CREDENTIALS` | GCS service account key | Yes |
 | `SECRET_KEY` | Application secret key | Yes |
 | `DEV_EDITOR_KEY` | Editor authentication key | Yes |
+| `ALLOWED_ORIGINS` | CORS allowed origins | Yes |
 | `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | No |
 | `ENVIRONMENT` | Environment (development, staging, production) | No |
 
 ## Free Tier Limits
 
 - **Neon DB**: 0.5GB storage, 10GB transfer/month
+- **Redis**: 30MB memory, 30 connections (Redis Cloud free tier)
 - **Google Cloud Storage**: 5GB storage, 1GB transfer/month
 - **Google Cloud Run**: 2M requests/month, 400K GB-seconds compute
 - **Vercel**: 100GB bandwidth/month
 
-## Contributing
+In layman's terms, this stack should cover a deep exploration.
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+## Architecture Decisions
+
+- **Domain-Driven Design**: Clear separation of concerns with domain logic
+- **Connection Pooling**: AsyncAdaptedQueuePool for production, NullPool for tests
+- **Rate Limiting**: Redis-based with different limits per endpoint type
+- **Structured Logging**: JSON logs with correlation IDs for observability
+- **Test Isolation**: Database cleanup between tests for reliability
+- **Docker-First**: All operations run in containers for consistency
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License
