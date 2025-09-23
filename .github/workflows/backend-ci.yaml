@@ -71,8 +71,8 @@ jobs:
         export POSTGRES_PASSWORD=postgres
         export POSTGRES_DB=test_db
         export POSTGRES_PORT=5433
-        export DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5433/test_db
-        export TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5433/test_db
+        export DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db
+        export TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db
         export ENVIRONMENT=test
         export PYTHONPATH=/code
         export PYTHONDONTWRITEBYTECODE=1
@@ -80,13 +80,13 @@ jobs:
         # Start services and run tests
         docker compose up -d db redis
         sleep 5
-        docker compose run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test -e DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5433/test_db -e TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5433/test_db backend python3 scripts/migrate.py --env test --database-url postgresql+asyncpg://postgres:postgres@db:5433/test_db
+        docker compose run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test -e DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db -e TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db backend python3 scripts/migrate.py --env test --database-url postgresql+asyncpg://postgres:postgres@db:5432/test_db
         docker compose run --rm \
           -e PYTHONPATH=/code \
           -e ENVIRONMENT=test \
           -e PYTHONDONTWRITEBYTECODE=1 \
-          -e DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5433/test_db \
-          -e TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5433/test_db \
+          -e DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db \
+          -e TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db \
           backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
         docker compose down -v
 
