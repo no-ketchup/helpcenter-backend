@@ -1,9 +1,9 @@
 from sqlmodel import SQLModel
 
 from .category import Category, GuideCategoryLink
-from .media import Media, GuideMediaLink
-from .guide import UserGuide
 from .feedback import Feedback
+from .guide import UserGuide
+from .media import GuideMediaLink, Media
 
 __all__ = [
     "Category",

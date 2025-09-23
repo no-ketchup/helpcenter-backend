@@ -1,6 +1,9 @@
 from typing import List
+
 import strawberry
-from app.domain.schema import Media as MediaType, UserGuide as GuideType
+
+from app.domain.schema import Media as MediaType
+from app.domain.schema import UserGuide as GuideType
 from app.services.media import MediaService
 
 

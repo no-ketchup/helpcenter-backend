@@ -1,16 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from app.core.db import get_session
+from app.core.rate_limiting import (
+    rate_limit_dev_editor_read,
+    rate_limit_dev_editor_write,
+)
 from app.domain.dtos.guide import (
     GuideCreateDTO,
-    GuideUpdateDTO,
     GuideReadDTO,
+    GuideUpdateDTO,
 )
-from .editor_guard import verify_dev_editor_key
 from app.services.guide import GuideService
-from app.core.rate_limiting import rate_limit_dev_editor_read, rate_limit_dev_editor_write
+
+from .editor_guard import verify_dev_editor_key
 
 router = APIRouter(
     prefix="/dev-editor",

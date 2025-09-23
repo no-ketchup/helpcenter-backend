@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, validator
+from typing import Any, Dict, List, Optional
 from uuid import UUID
+
+from pydantic import BaseModel, Field, validator
 
 from app.core.validation import CommonValidators
 

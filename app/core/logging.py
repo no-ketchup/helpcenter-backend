@@ -7,9 +7,9 @@ import json
 import logging
 import sys
 import uuid
-from typing import Any, Optional
 from contextvars import ContextVar
 from datetime import datetime
+from typing import Any, Optional
 
 # Context variable for correlation ID
 correlation_id: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)

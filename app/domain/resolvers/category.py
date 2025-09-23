@@ -1,9 +1,12 @@
+from datetime import datetime
 from typing import List, Optional
+
 import strawberry
-from app.domain.schema import Category as CategoryType, UserGuide as GuideType
+
+from app.domain.schema import Category as CategoryType
+from app.domain.schema import UserGuide as GuideType
 from app.services.category import CategoryService
 from app.services.guide import GuideService
-from datetime import datetime
 
 
 def to_guide(

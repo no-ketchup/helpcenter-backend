@@ -1,8 +1,12 @@
 from typing import List, Optional
+
 import strawberry
-from app.domain.schema import UserGuide as GuideType, Category as CategoryType, Media as MediaType
-from app.services.guide import GuideService
+
+from app.domain.schema import Category as CategoryType
+from app.domain.schema import Media as MediaType
+from app.domain.schema import UserGuide as GuideType
 from app.services.category import CategoryService
+from app.services.guide import GuideService
 
 
 @strawberry.type

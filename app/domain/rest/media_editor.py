@@ -1,17 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
-from sqlmodel.ext.asyncio.session import AsyncSession
-from uuid import UUID
 from typing import Optional
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.db import get_session
-from app.domain.dtos.media import MediaReadDTO
-from .editor_guard import verify_dev_editor_key
-from app.services.media import MediaService
 from app.core.rate_limiting import (
     rate_limit_dev_editor_read,
-    rate_limit_dev_editor_write,
     rate_limit_dev_editor_upload,
+    rate_limit_dev_editor_write,
 )
+from app.domain.dtos.media import MediaReadDTO
+from app.services.media import MediaService
+
+from .editor_guard import verify_dev_editor_key
 
 router = APIRouter(
     prefix="/dev-editor",

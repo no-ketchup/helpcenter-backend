@@ -1,8 +1,8 @@
+from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, validator
-from datetime import datetime
-from typing import Optional
 
 from app.core.validation import CommonValidators
 

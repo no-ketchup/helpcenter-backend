@@ -9,9 +9,9 @@ This module contains all REST API endpoints organized by domain:
 """
 
 from .dev_editor import router as dev_editor_router
+from .editor_guard import verify_dev_editor_key
 from .guide_editor import router as guide_editor_router
 from .media_editor import router as media_editor_router
-from .editor_guard import verify_dev_editor_key
 
 __all__ = [
     "dev_editor_router",

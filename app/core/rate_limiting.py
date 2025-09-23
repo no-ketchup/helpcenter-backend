@@ -10,12 +10,13 @@ Provides different rate limits for different types of endpoints:
 
 import os
 from typing import Optional
+
+import redis.asyncio as redis
+from fastapi import HTTPException, Request
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from fastapi import Request, HTTPException
-import redis.asyncio as redis
+from slowapi.util import get_remote_address
 
 from app.core.logging import get_logger
 

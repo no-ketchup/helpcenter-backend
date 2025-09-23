@@ -5,13 +5,14 @@ Handles async SQLAlchemy engine creation with appropriate connection pooling
 for different environments (test, development, production).
 """
 
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
-from sqlmodel.ext.asyncio.session import AsyncSession
+from contextlib import asynccontextmanager
+
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy.pool.impl import AsyncAdaptedQueuePool
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core import settings
 

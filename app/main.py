@@ -4,26 +4,27 @@ Help Center Backend - Main FastAPI Application
 A production-ready help center backend with GraphQL and REST APIs.
 """
 
+from contextlib import asynccontextmanager
+
+import strawberry
 from fastapi import FastAPI, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-import strawberry
-from strawberry.fastapi import GraphQLRouter
-from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import ValidationError
-from fastapi.exceptions import RequestValidationError
+from starlette.middleware.base import BaseHTTPMiddleware
+from strawberry.fastapi import GraphQLRouter
 
 from app.core.db import get_session
-from app.core.logging import setup_logging, get_logger, get_correlation_id
+from app.core.logging import get_correlation_id, get_logger, setup_logging
 from app.core.middleware import RequestLoggingMiddleware
-from app.core.settings import ENVIRONMENT, LOG_LEVEL, ALLOWED_ORIGINS
-from app.core.validation import create_error_response, handle_validation_error
 from app.core.rate_limiting import (
-    setup_rate_limiting,
     limiter,
+    setup_rate_limiting,
 )
-from app.domain.resolvers import Query, Mutation
+from app.core.settings import ALLOWED_ORIGINS, ENVIRONMENT, LOG_LEVEL
+from app.core.validation import create_error_response, handle_validation_error
+from app.domain.resolvers import Mutation, Query
 from app.domain.rest import dev_editor_router, guide_editor_router, media_editor_router
 
 

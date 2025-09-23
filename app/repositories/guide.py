@@ -1,13 +1,16 @@
 from typing import List, Optional
 from uuid import UUID
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import select as sa_select, delete as sa_delete
-from sqlalchemy.orm import selectinload
 
-from app.repositories.base import BaseRepository
-from app.domain.models import UserGuide as GuideModel, Category as CategoryModel
-from app.domain.dtos.guide import GuideCreateDTO, GuideUpdateDTO, GuideReadDTO
+from sqlalchemy import delete as sa_delete
+from sqlalchemy import select as sa_select
+from sqlalchemy.orm import selectinload
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.domain.dtos.guide import GuideCreateDTO, GuideReadDTO, GuideUpdateDTO
+from app.domain.models import Category as CategoryModel
+from app.domain.models import UserGuide as GuideModel
 from app.domain.models.category import GuideCategoryLink
+from app.repositories.base import BaseRepository
 
 
 class GuideRepository(BaseRepository[GuideModel]):

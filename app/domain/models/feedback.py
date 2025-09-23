@@ -1,7 +1,9 @@
-from sqlmodel import SQLModel, Field, Column
-from sqlalchemy import DateTime
-from uuid import UUID, uuid4
 from datetime import datetime
+from uuid import UUID, uuid4
+
+from sqlalchemy import DateTime
+from sqlmodel import Column, Field, SQLModel
+
 from app.utils.time import utcnow
 
 

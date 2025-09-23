@@ -1,16 +1,17 @@
+import os
+import time
 from typing import List, Optional
 from uuid import UUID
-from fastapi import HTTPException, UploadFile
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import select as sa_select
-import time
-import os
-from google.cloud import storage
 
-from app.repositories.media import MediaRepository
+from fastapi import HTTPException, UploadFile
+from google.cloud import storage
+from sqlalchemy import select as sa_select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.core.settings import GCS_BUCKET_NAME, GOOGLE_APPLICATION_CREDENTIALS
 from app.domain.dtos.media import MediaCreateDTO, MediaReadDTO
 from app.domain.models import Media as MediaModel
-from app.core.settings import GCS_BUCKET_NAME, GOOGLE_APPLICATION_CREDENTIALS
+from app.repositories.media import MediaRepository
 
 
 class MediaService:
@@ -119,8 +120,9 @@ class MediaService:
         self, session: AsyncSession, media_id: UUID, guide_id: UUID
     ) -> None:
         """Detach media from a guide."""
-        from app.domain.models import GuideMediaLink
         from sqlalchemy import delete as sa_delete
+
+        from app.domain.models import GuideMediaLink
 
         stmt = sa_delete(GuideMediaLink).where(
             GuideMediaLink.media_id == media_id, GuideMediaLink.guide_id == guide_id
@@ -130,8 +132,9 @@ class MediaService:
 
     async def get_guide_media(self, session: AsyncSession, guide_id: UUID) -> List[MediaReadDTO]:
         """Get all media attached to a specific guide."""
-        from app.domain.models import GuideMediaLink
         from sqlalchemy import select as sa_select
+
+        from app.domain.models import GuideMediaLink
 
         stmt = sa_select(MediaModel).join(GuideMediaLink).where(GuideMediaLink.guide_id == guide_id)
         result = await session.execute(stmt)
@@ -141,9 +144,10 @@ class MediaService:
 
     async def get_media_guides(self, session: AsyncSession, media_id: UUID) -> List:
         """Get all guides attached to a specific media."""
-        from app.domain.models import GuideMediaLink, UserGuide
-        from app.domain.dtos.guide import GuideReadDTO
         from sqlalchemy import select as sa_select
+
+        from app.domain.dtos.guide import GuideReadDTO
+        from app.domain.models import GuideMediaLink, UserGuide
 
         stmt = sa_select(UserGuide).join(GuideMediaLink).where(GuideMediaLink.media_id == media_id)
         result = await session.execute(stmt)

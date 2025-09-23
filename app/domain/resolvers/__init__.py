@@ -1,8 +1,9 @@
 import strawberry
+
 from .category import CategoryQuery
+from .feedback import FeedbackMutation
 from .guide import GuideQuery
 from .media import MediaQuery
-from .feedback import FeedbackMutation
 
 
 @strawberry.type

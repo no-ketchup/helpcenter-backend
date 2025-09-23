@@ -1,13 +1,13 @@
-from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.repositories.category import CategoryRepository
 from app.domain.dtos.category import (
     CategoryCreateDTO,
-    CategoryUpdateDTO,
     CategoryReadDTO,
+    CategoryUpdateDTO,
 )
+from app.repositories.category import CategoryRepository
 
 
 class CategoryService:

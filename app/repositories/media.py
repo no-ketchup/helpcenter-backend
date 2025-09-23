@@ -1,11 +1,12 @@
 from typing import List, Optional
 from uuid import UUID
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import delete as sa_delete
 
-from app.repositories.base import BaseRepository
+from sqlalchemy import delete as sa_delete
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.domain.dtos.media import MediaCreateDTO, MediaReadDTO, MediaUpdateDTO
 from app.domain.models import Media as MediaModel
-from app.domain.dtos.media import MediaCreateDTO, MediaUpdateDTO, MediaReadDTO
+from app.repositories.base import BaseRepository
 
 
 class MediaRepository(BaseRepository[MediaModel]):

@@ -4,9 +4,10 @@ Comprehensive input validation and error handling utilities.
 
 import re
 from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel, ValidationError
+
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ValidationError
 
 from app.core.logging import get_logger
 

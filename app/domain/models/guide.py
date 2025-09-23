@@ -1,10 +1,13 @@
-from sqlmodel import SQLModel, Field, Relationship, Column
+from datetime import datetime
+from typing import List, Optional
+from uuid import UUID, uuid4
+
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSON
-from uuid import UUID, uuid4
-from datetime import datetime
-from typing import Optional, List
+from sqlmodel import Column, Field, Relationship, SQLModel
+
 from app.utils.time import utcnow
+
 from .category import GuideCategoryLink
 from .media import GuideMediaLink
 

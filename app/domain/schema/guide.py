@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from datetime import datetime
-import strawberry
 from typing import TYPE_CHECKING, Annotated, List
+
+import strawberry
 
 if TYPE_CHECKING:
     from .category import Category

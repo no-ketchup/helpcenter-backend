@@ -1,6 +1,8 @@
-import strawberry
-from app.domain.schema import Feedback as FeedbackType
 from datetime import datetime
+
+import strawberry
+
+from app.domain.schema import Feedback as FeedbackType
 
 
 @strawberry.type

@@ -5,10 +5,11 @@ Custom middleware for request logging and correlation IDs.
 import time
 import uuid
 from typing import Callable
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.core.logging import get_logger, set_correlation_id, log_request
+from app.core.logging import get_logger, log_request, set_correlation_id
 
 logger = get_logger("middleware")
 
