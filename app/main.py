@@ -30,7 +30,7 @@ from app.domain.rest import dev_editor_router, guide_editor_router, media_editor
 
 setup_logging(LOG_LEVEL)
 
-# --- Handle GOOGLE_APPLICATION_CREDENTIALS_JSON if present ---
+# Handle GOOGLE_APPLICATION_CREDENTIALS_JSON if present
 if creds_json := os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON"):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
     tmp.write(creds_json.encode("utf-8"))
