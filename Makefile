@@ -6,7 +6,8 @@ endif
 endif
 
 ENV_FILE ?= .env.local
-COMPOSE = docker compose --env-file $(ENV_FILE)
+COMPOSE = docker compose
+COMPOSE_WITH_ENV = docker compose --env-file $(ENV_FILE)
 
 .PHONY: help migrate revision migrate-test build up down clean prune test ci-test \
         logs logs-backend logs-db logs-redis logs-once shell db-shell db-list \
@@ -33,19 +34,19 @@ migrate-prod: ## Run migrations on production DB
 	python3 scripts/migrate.py --env production --database-url $(DATABASE_URL_ASYNC)
 
 build: ## Build Docker images
-	$(COMPOSE) build
+	$(COMPOSE_WITH_ENV) build
 
 build-prod: ## Build production Docker image
 	docker build -f Dockerfile.prod -t helpcenter-backend:latest .
 
 up: ## Start all services
-	$(COMPOSE) up -d
+	$(COMPOSE_WITH_ENV) up -d
 
 down: ## Stop all services
-	$(COMPOSE) down
+	$(COMPOSE_WITH_ENV) down
 
 clean: ## Stop services and remove volumes
-	$(COMPOSE) down -v --remove-orphans
+	$(COMPOSE_WITH_ENV) down -v --remove-orphans
 
 prune: ## Remove all Docker resources
 	docker system prune -af
@@ -92,31 +93,31 @@ ci-test-no-env: ## CI mode without env file dependency
 	ENV_FILE=/dev/null docker compose down -v
 
 logs: ## Show logs for all services
-	$(COMPOSE) logs -f
+	$(COMPOSE_WITH_ENV) logs -f
 
 logs-backend: ## Show backend logs
-	$(COMPOSE) logs -f backend
+	$(COMPOSE_WITH_ENV) logs -f backend
 
 logs-db: ## Show database logs
-	$(COMPOSE) logs -f db
+	$(COMPOSE_WITH_ENV) logs -f db
 
 logs-redis: ## Show Redis logs
-	$(COMPOSE) logs -f redis
+	$(COMPOSE_WITH_ENV) logs -f redis
 
 logs-once: ## Show logs once
-	$(COMPOSE) logs
+	$(COMPOSE_WITH_ENV) logs
 
 shell: ## Open shell in backend container
-	$(COMPOSE) run --rm backend bash
+	$(COMPOSE_WITH_ENV) run --rm backend bash
 
 editor: ## Run the help center editor
 	python scripts/demo/editor.py
 
 db-shell: ## Open database shell
-	$(COMPOSE) exec db psql -U helpcenter_devuser -d helpcenter_devdb
+	$(COMPOSE_WITH_ENV) exec db psql -U helpcenter_devuser -d helpcenter_devdb
 
 db-list: ## List databases
-	$(COMPOSE) exec db psql -U helpcenter_devuser -c "\l"
+	$(COMPOSE_WITH_ENV) exec db psql -U helpcenter_devuser -c "\l"
 
 prod-up: ## Start production services
 	$(MAKE) up ENV_FILE=.env.prod
@@ -134,19 +135,19 @@ check-migrations: ## Check migration status
 	python3 scripts/migrate.py --check
 
 dev: ## Start development environment (backend + db + redis)
-	$(COMPOSE) up -d db redis
+	$(COMPOSE_WITH_ENV) up -d db redis
 	sleep 3
-	$(COMPOSE) run --rm -e PYTHONPATH=/code backend python3 scripts/migrate.py --env development
-	$(COMPOSE) up backend
+	$(COMPOSE_WITH_ENV) run --rm -e PYTHONPATH=/code backend python3 scripts/migrate.py --env development
+	$(COMPOSE_WITH_ENV) up backend
 
 dev-stop: ## Stop development environment
-	$(COMPOSE) down
+	$(COMPOSE_WITH_ENV) down
 
 health: ## Check API health
 	curl -s http://localhost:8000/health | jq
 
 lint: ## Run code linting
-	$(COMPOSE) run --rm backend bash -c 'cd /code && python -m flake8 app/ --max-line-length=100 --ignore=E203,W503,F821,E402'
+	$(COMPOSE_WITH_ENV) run --rm backend bash -c 'cd /code && python -m flake8 app/ --max-line-length=100 --ignore=E203,W503,F821,E402'
 
 format: ## Format code with black
-	$(COMPOSE) run --rm backend bash -c 'cd /code && python -m black app/ --line-length=100'
+	$(COMPOSE_WITH_ENV) run --rm backend bash -c 'cd /code && python -m black app/ --line-length=100'
