@@ -6,6 +6,8 @@ set -euo pipefail
 
 ENVIRONMENT=${1:-staging}
 
+echo "Starting deployment for environment: ${ENVIRONMENT}"
+
 # Validate required environment variables
 if [ -z "${GOOGLE_CLOUD_PROJECT:-}" ]; then
   echo "ERROR: GOOGLE_CLOUD_PROJECT is not set"

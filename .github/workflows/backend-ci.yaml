@@ -165,18 +165,17 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Deploy to Cloud Run (Staging)
-      run: |
-        export GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }}
-        export GOOGLE_CLOUD_REGION=${{ secrets.GOOGLE_CLOUD_REGION }}
-        export DATABASE_URL_ASYNC=${{ secrets.DATABASE_URL }}
-        export REDIS_URL=${{ secrets.REDIS_URL }}
-        export SECRET_KEY=${{ secrets.SECRET_KEY }}
-        export DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }}
-        export GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}
-        export ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
-        export GOOGLE_APPLICATION_CREDENTIALS_SECRET=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_SECRET }}
-        
-        ./scripts/deploy-cloud-run.sh staging
+      env:
+        GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+        GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
+        DATABASE_URL_ASYNC: ${{ secrets.DATABASE_URL }}
+        REDIS_URL: ${{ secrets.REDIS_URL }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
+        GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+        ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+        GOOGLE_APPLICATION_CREDENTIALS_SECRET: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_SECRET }}
+      run: ./scripts/deploy-cloud-run.sh staging
 
   deploy-production:
     needs: build
@@ -197,15 +196,14 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Deploy to Cloud Run (Production)
-      run: |
-        export GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }}
-        export GOOGLE_CLOUD_REGION=${{ secrets.GOOGLE_CLOUD_REGION }}
-        export DATABASE_URL_ASYNC=${{ secrets.DATABASE_URL }}
-        export REDIS_URL=${{ secrets.REDIS_URL }}
-        export SECRET_KEY=${{ secrets.SECRET_KEY }}
-        export DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }}
-        export GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}
-        export ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
-        export GOOGLE_APPLICATION_CREDENTIALS_SECRET=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_SECRET }}
-        
-        ./scripts/deploy-cloud-run.sh production
+      env:
+        GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+        GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
+        DATABASE_URL_ASYNC: ${{ secrets.DATABASE_URL }}
+        REDIS_URL: ${{ secrets.REDIS_URL }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
+        GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+        ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+        GOOGLE_APPLICATION_CREDENTIALS_SECRET: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_SECRET }}
+      run: ./scripts/deploy-cloud-run.sh production
