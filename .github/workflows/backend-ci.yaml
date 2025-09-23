@@ -122,6 +122,17 @@ jobs:
       run: |
         # Build production Docker image directly
         docker build -f Dockerfile.prod -t helpcenter-backend:latest .
+        
+        # Tag for GCP
+        docker tag helpcenter-backend:latest gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-backend:${{ github.sha }}
+        docker tag helpcenter-backend:latest gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-backend:latest
+
+    - name: Push Docker image
+      run: |
+        gcloud auth configure-docker gcr.io --quiet
+        docker push gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-backend:${{ github.sha }}
+        docker push gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-backend:latest
+
 
     - name: Test Docker image
       run: |
@@ -197,6 +208,7 @@ jobs:
 
     - name: Deploy to Cloud Run (Production)
       env:
+        GITHUB_SHA: ${{ github.sha }}
         GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
         GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
         DATABASE_URL_ASYNC: ${{ secrets.DATABASE_URL }}

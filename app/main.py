@@ -3,7 +3,8 @@ Help Center Backend - Main FastAPI Application
 
 A production-ready help center backend with GraphQL and REST APIs.
 """
-
+import os
+import tempfile
 from contextlib import asynccontextmanager
 
 import strawberry
@@ -27,6 +28,14 @@ from app.core.validation import create_error_response, handle_validation_error
 from app.domain.resolvers import Mutation, Query
 from app.domain.rest import dev_editor_router, guide_editor_router, media_editor_router
 
+setup_logging(LOG_LEVEL)
+
+# --- Handle GOOGLE_APPLICATION_CREDENTIALS_JSON if present ---
+if creds_json := os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON"):
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+    tmp.write(creds_json.encode("utf-8"))
+    tmp.flush()
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -146,7 +155,7 @@ async def graphql_options(request: Request):
     return Response(
         status_code=200,
         headers={
-            "Access-Control-Allow-Origin": "http://localhost:3000",
+            "Access-Control-Allow-Origin": ",".join(ALLOWED_ORIGINS),
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Access-Control-Max-Age": "86400",
