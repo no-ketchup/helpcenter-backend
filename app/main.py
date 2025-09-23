@@ -65,7 +65,7 @@ class GraphQLCORSMiddleware(BaseHTTPMiddleware):
             return Response(
                 status_code=200,
                 headers={
-                    "Access-Control-Allow-Origin": "http://localhost:3000",
+                    "Access-Control-Allow-Origin": ",".join(ALLOWED_ORIGINS),
                     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
                     "Access-Control-Allow-Headers": "Content-Type, Authorization",
                     "Access-Control-Max-Age": "86400",
