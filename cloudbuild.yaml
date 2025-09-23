@@ -1,18 +1,19 @@
 steps:
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-f', 'Dockerfile.prod', '-t', 'gcr.io/$PROJECT_ID/helpcenter-backend:${_TAG}', '-t', 'gcr.io/$PROJECT_ID/helpcenter-backend:latest', '.']
+    args: ['build', '-f', 'Dockerfile.prod', '-t', 'gcr.io/${_PROJECT_ID}/helpcenter-backend:${_TAG}', '-t', 'gcr.io/${_PROJECT_ID}/helpcenter-backend:latest', '.']
 
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/helpcenter-backend:${_TAG}']
+    args: ['push', 'gcr.io/${_PROJECT_ID}/helpcenter-backend:${_TAG}']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/helpcenter-backend:latest']
+    args: ['push', 'gcr.io/${_PROJECT_ID}/helpcenter-backend:latest']
 
 images:
-  - 'gcr.io/$PROJECT_ID/helpcenter-backend:${_TAG}'
-  - 'gcr.io/$PROJECT_ID/helpcenter-backend:latest'
+  - 'gcr.io/${_PROJECT_ID}/helpcenter-backend:${_TAG}'
+  - 'gcr.io/${_PROJECT_ID}/helpcenter-backend:latest'
 
 substitutions:
   _TAG: '${GITHUB_SHA}'
+  _PROJECT_ID: '${GOOGLE_CLOUD_PROJECT}'

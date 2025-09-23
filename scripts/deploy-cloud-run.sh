@@ -20,7 +20,7 @@ echo "Deploying to Cloud Run: ${SERVICE_NAME}"
 
 # Build and push image
 echo "Building and pushing Docker image..."
-gcloud builds submit . --config cloudbuild.yaml --substitutions=_TAG=${GITHUB_SHA:-latest}
+gcloud builds submit . --config cloudbuild.yaml --substitutions=_TAG=${GITHUB_SHA:-latest},_PROJECT_ID=${GOOGLE_CLOUD_PROJECT}
 
 # Deploy to Cloud Run
 echo "Deploying to Cloud Run..."
