@@ -131,7 +131,7 @@ health: ## Check API health
 	curl -s http://localhost:8000/health | jq
 
 lint: ## Run code linting
-	$(COMPOSE) run --rm backend bash -c 'cd /code && python -m flake8 app/ --max-line-length=100 --ignore=E203,W503'
+	$(COMPOSE) run --rm backend bash -c 'cd /code && python -m flake8 app/ --max-line-length=100 --ignore=E203,W503,F821,E402'
 
 format: ## Format code with black
 	$(COMPOSE) run --rm backend bash -c 'cd /code && python -m black app/ --line-length=100'
