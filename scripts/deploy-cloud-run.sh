@@ -12,23 +12,20 @@ echo "Starting deployment for environment: ${ENVIRONMENT}"
 : "${GOOGLE_CLOUD_PROJECT:?ERROR: GOOGLE_CLOUD_PROJECT is not set}"
 : "${GOOGLE_CLOUD_REGION:?ERROR: GOOGLE_CLOUD_REGION is not set}"
 
-PROJECT_ID="${GOOGLE_CLOUD_PROJECT}"
-REGION="${GOOGLE_CLOUD_REGION}"
+PROJECT_ID=${GOOGLE_CLOUD_PROJECT}
+REGION=${GOOGLE_CLOUD_REGION}
 SERVICE_NAME="helpcenter-backend-${ENVIRONMENT}"
-TAG=${GITHUB_SHA:-latest}
 
-echo "Deploying to Cloud Run: ${SERVICE_NAME} (image tag: ${TAG})"
+echo "Deploying to Cloud Run: ${SERVICE_NAME}"
 
 # Build and push image
 echo "Building and pushing Docker image..."
-echo "Using PROJECT_ID: ${PROJECT_ID}"
-echo "Using TAG: ${TAG}"
-gcloud builds submit . --config cloudbuild.yaml --substitutions=_TAG=${TAG}
+gcloud builds submit . --config cloudbuild.yaml --substitutions=_TAG=${GITHUB_SHA:-latest}
 
-# Deploy to Cloud Run using the pre-built image
+# Deploy to Cloud Run
 echo "Deploying to Cloud Run..."
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/${PROJECT_ID}/helpcenter-backend:${TAG} \
+  --image gcr.io/${PROJECT_ID}/helpcenter-backend:latest \
   --platform managed \
   --region ${REGION} \
   --allow-unauthenticated \
@@ -39,7 +36,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --set-env-vars "DEV_EDITOR_KEY=${DEV_EDITOR_KEY}" \
   --set-env-vars "GCS_BUCKET_NAME=${GCS_BUCKET_NAME}" \
   --set-env-vars "ALLOWED_ORIGINS=${ALLOWED_ORIGINS}" \
-  --set-secrets=GOOGLE_APPLICATION_CREDENTIALS=GCS_SA_KEY:latest \
+  --set-secrets="GOOGLE_APPLICATION_CREDENTIALS=GCS_SA_KEY:latest" \
   --memory 1Gi \
   --cpu 1 \
   --min-instances 0 \

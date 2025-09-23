@@ -1,15 +1,7 @@
 steps:
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'build'
-      - '-f'
-      - 'Dockerfile.prod'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/helpcenter-backend:${_TAG}'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/helpcenter-backend:latest'
-      - '.'
+    args: ['build', '-f', 'Dockerfile.prod', '-t', 'gcr.io/$PROJECT_ID/helpcenter-backend:${_TAG}', '-t', 'gcr.io/$PROJECT_ID/helpcenter-backend:latest', '.']
 
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -22,8 +14,5 @@ images:
   - 'gcr.io/$PROJECT_ID/helpcenter-backend:${_TAG}'
   - 'gcr.io/$PROJECT_ID/helpcenter-backend:latest'
 
-options:
-  dynamicSubstitutions: true
-
 substitutions:
-  _TAG: 'UNKNOWN' # Default value, will be overridden by deploy script
+  _TAG: '${GITHUB_SHA}'
