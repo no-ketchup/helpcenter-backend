@@ -203,6 +203,9 @@ jobs:
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
 
+    - name: Set PROJECT_ID for GCloud
+      run: echo "PROJECT_ID=${{ secrets.GOOGLE_CLOUD_PROJECT }}" >> $GITHUB_ENV
+
     - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
 

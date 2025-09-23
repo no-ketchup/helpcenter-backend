@@ -12,8 +12,8 @@ echo "Starting deployment for environment: ${ENVIRONMENT}"
 : "${GOOGLE_CLOUD_PROJECT:?ERROR: GOOGLE_CLOUD_PROJECT is not set}"
 : "${GOOGLE_CLOUD_REGION:?ERROR: GOOGLE_CLOUD_REGION is not set}"
 
-PROJECT_ID=${GOOGLE_CLOUD_PROJECT}
-REGION=${GOOGLE_CLOUD_REGION}
+PROJECT_ID="${GOOGLE_CLOUD_PROJECT}"
+REGION="${GOOGLE_CLOUD_REGION}"
 SERVICE_NAME="helpcenter-backend-${ENVIRONMENT}"
 TAG=${GITHUB_SHA:-latest}
 
@@ -39,7 +39,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --set-env-vars "DEV_EDITOR_KEY=${DEV_EDITOR_KEY}" \
   --set-env-vars "GCS_BUCKET_NAME=${GCS_BUCKET_NAME}" \
   --set-env-vars "ALLOWED_ORIGINS=${ALLOWED_ORIGINS}" \
-  --set-secrets=GOOGLE_APPLICATION_CREDENTIALS=GCS_SA_KEY:latest
+  --set-secrets=GOOGLE_APPLICATION_CREDENTIALS=GCS_SA_KEY:latest \
   --memory 1Gi \
   --cpu 1 \
   --min-instances 0 \
