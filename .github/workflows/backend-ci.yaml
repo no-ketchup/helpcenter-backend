@@ -17,19 +17,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+    # Note: Using Docker Compose for database instead of services to avoid port conflicts
 
     steps:
     - name: Checkout code
@@ -142,9 +130,9 @@ jobs:
           -e ENVIRONMENT=test \
           -e DATABASE_URL_ASYNC=postgresql+asyncpg://test:test@localhost:5432/test_db \
           -e REDIS_URL=redis://localhost:6379 \
-          -e SECRET_KEY=test-secret-key \
-          -e DEV_EDITOR_KEY=test-editor-key \
-          -e GCS_BUCKET_NAME=test-bucket \
+          -e SECRET_KEY=${{ secrets.SECRET_KEY || 'test-secret-key' }} \
+          -e DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY || 'test-editor-key' }} \
+          -e GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME || 'test-bucket' }} \
           -e ALLOWED_ORIGINS=http://localhost:3000 \
           helpcenter-backend:latest
         sleep 10

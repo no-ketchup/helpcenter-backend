@@ -5,20 +5,32 @@ set -euo pipefail
 # Usage: ./scripts/deploy-cloud-run.sh [staging|production]
 
 ENVIRONMENT=${1:-staging}
-PROJECT_ID=${GOOGLE_CLOUD_PROJECT:-helpcenter-backend}
-REGION=${GOOGLE_CLOUD_REGION:-us-central1}
+
+# Validate required environment variables
+if [ -z "${GOOGLE_CLOUD_PROJECT:-}" ]; then
+  echo "ERROR: GOOGLE_CLOUD_PROJECT is not set"
+  exit 1
+fi
+
+if [ -z "${GOOGLE_CLOUD_REGION:-}" ]; then
+  echo "ERROR: GOOGLE_CLOUD_REGION is not set"
+  exit 1
+fi
+
+PROJECT_ID=${GOOGLE_CLOUD_PROJECT}
+REGION=${GOOGLE_CLOUD_REGION}
 SERVICE_NAME="helpcenter-backend-${ENVIRONMENT}"
 
 echo "Deploying to Cloud Run: ${SERVICE_NAME}"
 
 # Build and push image
 echo "Building and pushing Docker image..."
-gcloud builds submit --tag gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest . --config cloudbuild.yaml
+gcloud builds submit . --config cloudbuild.yaml
 
 # Deploy to Cloud Run
 echo "Deploying to Cloud Run..."
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest \
+  --image gcr.io/${PROJECT_ID}/helpcenter-backend:latest \
   --platform managed \
   --region ${REGION} \
   --allow-unauthenticated \
