@@ -82,15 +82,15 @@ ci-test: ## CI mode: reset, abort on exit, propagate exit code
 	$(MAKE) clean ENV_FILE=.env.local
 
 ci-test-no-env: ## CI mode without env file dependency
-	docker compose up -d db redis
+	@ENV_FILE=/dev/null docker compose up -d db redis
 	sleep 5
-	docker compose run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test backend python3 scripts/migrate.py --env test --database-url postgresql+asyncpg://postgres:postgres@db:5432/test_db
-	docker compose run --rm \
+	@ENV_FILE=/dev/null docker compose run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test backend python3 scripts/migrate.py --env test --database-url postgresql+asyncpg://postgres:postgres@db:5432/test_db
+	@ENV_FILE=/dev/null docker compose run --rm \
 		-e PYTHONPATH=/code \
 		-e ENVIRONMENT=test \
 		-e PYTHONDONTWRITEBYTECODE=1 \
 		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
-	docker compose down -v
+	@ENV_FILE=/dev/null docker compose down -v
 
 logs: ## Show logs for all services
 	$(COMPOSE) logs -f
