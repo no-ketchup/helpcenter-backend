@@ -23,7 +23,7 @@ echo "Deploying to Cloud Run: ${SERVICE_NAME} (image tag: ${TAG})"
 echo "Building and pushing Docker image..."
 echo "Using PROJECT_ID: ${PROJECT_ID}"
 echo "Using TAG: ${TAG}"
-gcloud builds submit . --config cloudbuild.yaml --substitutions=_TAG=${TAG},_PROJECT_ID=${PROJECT_ID}
+gcloud builds submit . --config cloudbuild.yaml --substitutions=_TAG=${TAG}
 
 # Deploy to Cloud Run using the pre-built image
 echo "Deploying to Cloud Run..."
