@@ -64,37 +64,17 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Run tests using Docker Compose
+    - name: Run tests using Makefile
       run: |
-        # Set up environment for CI
+        # Set CI environment variable to skip .env.local inclusion
+        export CI=true
         export TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
         export ENVIRONMENT=test
         export PYTHONPATH=/code
         export PYTHONDONTWRITEBYTECODE=1
         
-        # Start services
-        docker compose up -d db redis
-        
-        # Wait for services to be ready
-        sleep 5
-        
-        # Run migrations
-        docker compose run --rm \
-          -e PYTHONPATH=/code \
-          -e ENVIRONMENT=test \
-          -e TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@localhost:5432/test_db \
-          backend python3 scripts/migrate.py --env test --database-url postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
-        
-        # Run tests
-        docker compose run --rm \
-          -e PYTHONPATH=/code \
-          -e ENVIRONMENT=test \
-          -e PYTHONDONTWRITEBYTECODE=1 \
-          -e TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@localhost:5432/test_db \
-          backend bash -lc 'cd /code && pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v --cov=app --cov-report=xml --cov-report=html'
-        
-        # Cleanup
-        docker compose down -v
+        # Use the CI-specific Makefile target
+        make ci-test-no-env
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -136,10 +116,20 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker image
+    - name: Build Docker image using Makefile
       run: |
-        # Build production Docker image directly
-        docker build -f Dockerfile.prod -t helpcenter-backend:latest .
+        # Set CI environment variable to skip .env.local inclusion
+        export CI=true
+        export DATABASE_URL_ASYNC=${{ secrets.DATABASE_URL }}
+        export REDIS_URL=${{ secrets.REDIS_URL }}
+        export SECRET_KEY=${{ secrets.SECRET_KEY }}
+        export DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }}
+        export GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}
+        export GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        export ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+        
+        # Build production Docker image using Makefile
+        make build-prod
 
     - name: Test Docker image
       run: |

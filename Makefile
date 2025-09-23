@@ -1,5 +1,10 @@
+# Only include .env.local if it exists and we're not in CI
+ifneq ($(CI),true)
+ifneq ($(wildcard .env.local),)
 include .env.local
 export
+endif
+endif
 
 ENV_FILE ?= .env.local
 COMPOSE = docker compose --env-file $(ENV_FILE)
@@ -75,6 +80,17 @@ ci-test: ## CI mode: reset, abort on exit, propagate exit code
 		-e PYTHONDONTWRITEBYTECODE=1 \
 		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
 	$(MAKE) clean ENV_FILE=.env.local
+
+ci-test-no-env: ## CI mode without env file dependency
+	docker compose up -d db redis
+	sleep 5
+	docker compose run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test backend python3 scripts/migrate.py --env test --database-url postgresql+asyncpg://postgres:postgres@db:5432/test_db
+	docker compose run --rm \
+		-e PYTHONPATH=/code \
+		-e ENVIRONMENT=test \
+		-e PYTHONDONTWRITEBYTECODE=1 \
+		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
+	docker compose down -v
 
 logs: ## Show logs for all services
 	$(COMPOSE) logs -f
