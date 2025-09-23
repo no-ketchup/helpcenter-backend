@@ -56,7 +56,7 @@ By treating this as a production-grade project, I get to explore what it takes t
 ### 1. Setup
 
 ```bash
-git clone <your-repo>
+git clone <repo>
 cd helpcenter-backend
 cp env.example .env.local
 # Edit .env.local with your actual values
@@ -92,18 +92,39 @@ make test-quick
 ```bash
 make help          # Show all commands
 make dev           # Start development environment
-make dev-stop      # Stop development environment
-make test          # Run full test suite with cleanup
-make test-quick    # Run tests without cleanup
+make dev-stop      # Stop development environment (NOT ALLOWED IN PRODUCTION)
+make test          # Run full test suite with cleanup (TEST-ONLY TARGET)
+make test-quick    # Run tests without cleanup (TEST-ONLY TARGET)
 make migrate       # Run database migrations
-make build         # Build Docker images
+make build         # Build Docker images (NOT ALLOWED IN PRODUCTION)
 make build-prod    # Build production Docker image
-make logs          # View logs
-make shell         # Open container shell
-make editor        # Run the help center editor
+make logs          # View logs (NOT ALLOWED IN PRODUCTION)
+make shell         # Open container shell (NOT ALLOWED IN PRODUCTION)
+make editor        # Run the help center editor (NOT ALLOWED IN PRODUCTION)
 make health        # Check API health
-make lint          # Run code linting
-make format        # Format code with black
+make lint          # Run code linting (NOT ALLOWED IN PRODUCTION)
+make format        # Format code with black (NOT ALLOWED IN PRODUCTION)
+```
+
+### Production Safety
+
+The Makefile includes production safety checks that prevent certain commands from running in production environments:
+
+- **Test-only targets**: `test`, `test-quick`, `ci-test` - These always use test databases and are blocked in production
+- **Development-only targets**: `build`, `clean`, `prune`, `logs`, `shell`, `editor`, `db-shell`, `db-list`, `dev-stop`, `lint`, `format` - These are blocked in production for security
+- **Production targets**: `prod-up`, `prod-down`, `prod-clean`, `prod-migrate` - These are specifically designed for production use
+
+### Environment-Specific Usage
+
+```bash
+# Development (uses .env.local)
+make dev
+make test
+make build
+
+# Production (requires environment variables to be set)
+ENVIRONMENT=production make prod-up
+ENVIRONMENT=production make prod-migrate
 ```
 
 ### Project Structure
@@ -116,7 +137,7 @@ app/
 │   ├── middleware.py # Request/response middleware
 │   ├── rate_limiting.py # Redis-based rate limiting
 │   └── settings.py # Application settings
-├── domain/         # Domain logic (DDD structure)
+├── domain/         # Domain logic
 │   ├── models/    # SQLModel entities
 │   ├── dtos/      # Data transfer objects
 │   ├── resolvers/ # GraphQL resolvers
@@ -212,10 +233,18 @@ docker compose run --rm -e ENVIRONMENT=test backend pytest --cov=app tests/
 
 The project includes a complete CI/CD pipeline with GitHub Actions:
 
-1. **Test**: Runs full test suite with Docker
-2. **Security Scan**: Trivy vulnerability scanning
-3. **Build**: Creates production Docker image
-4. **Deploy**: Automatically deploys to Cloud Run
+1. **Test**: Runs full test suite with Docker using isolated test database
+2. **Security Scan**: Trivy vulnerability scanning with SARIF upload
+3. **Build**: Creates production Docker image using Dockerfile.prod
+4. **Deploy**: Automatically deploys to Cloud Run with environment-specific secrets
+
+#### CI/CD Environment Variables
+
+The CI/CD pipeline uses hardcoded test values for testing and injects real secrets only during deployment:
+
+- **Test Phase**: Uses `postgres:postgres@db:5432/test_db` for isolated testing
+- **Deployment Phase**: Injects production secrets from GitHub Secrets
+- **Environment Validation**: Makefile validates required environment variables are present
 
 ### Manual Deployment
 
@@ -262,6 +291,9 @@ In layman's terms, this stack should cover a deep exploration.
 - **Structured Logging**: JSON logs with correlation IDs for observability
 - **Test Isolation**: Database cleanup between tests for reliability
 - **Docker-First**: All operations run in containers for consistency
+- **Production Safety**: Makefile blocks dangerous commands in production environments
+- **Environment Validation**: Explicit validation of required environment variables
+- **CI/CD Isolation**: Test phase uses hardcoded values, deployment phase uses secrets
 
 ## License
 

@@ -64,17 +64,30 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Run tests using Makefile
+    - name: Run tests using Docker Compose
       run: |
-        # Set CI environment variable to skip .env.local inclusion
-        export CI=true
-        export TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+        # Set up environment variables for CI
+        export POSTGRES_USER=postgres
+        export POSTGRES_PASSWORD=postgres
+        export POSTGRES_DB=test_db
+        export DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db
+        export TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db
         export ENVIRONMENT=test
         export PYTHONPATH=/code
         export PYTHONDONTWRITEBYTECODE=1
         
-        # Use the CI-specific Makefile target
-        make ci-test-no-env
+        # Start services and run tests
+        docker compose up -d db redis
+        sleep 5
+        docker compose run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test -e DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db -e TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db backend python3 scripts/migrate.py --env test --database-url postgresql+asyncpg://postgres:postgres@db:5432/test_db
+        docker compose run --rm \
+          -e PYTHONPATH=/code \
+          -e ENVIRONMENT=test \
+          -e PYTHONDONTWRITEBYTECODE=1 \
+          -e DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db \
+          -e TEST_DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@db:5432/test_db \
+          backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
+        docker compose down -v
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -116,20 +129,10 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker image using Makefile
+    - name: Build Docker image
       run: |
-        # Set CI environment variable to skip .env.local inclusion
-        export CI=true
-        export DATABASE_URL_ASYNC=${{ secrets.DATABASE_URL }}
-        export REDIS_URL=${{ secrets.REDIS_URL }}
-        export SECRET_KEY=${{ secrets.SECRET_KEY }}
-        export DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }}
-        export GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}
-        export GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-        export ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
-        
-        # Build production Docker image using Makefile
-        make build-prod
+        # Build production Docker image directly
+        docker build -f Dockerfile.prod -t helpcenter-backend:latest .
 
     - name: Test Docker image
       run: |
