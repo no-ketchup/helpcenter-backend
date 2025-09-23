@@ -1,14 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.core.db import get_session
+from app.core.db import get_session_dependency
 from app.domain.dtos.category import (
     CategoryCreateDTO,
     CategoryUpdateDTO,
     CategoryReadDTO,
 )
-from app.core.editor_guard import verify_dev_editor_key
+from .editor_guard import verify_dev_editor_key
 from app.services.category import CategoryService
+from app.core.rate_limiting import (
+    rate_limit_dev_editor_read,
+    rate_limit_dev_editor_write
+)
 
 router = APIRouter(
     prefix="/dev-editor",
@@ -20,19 +24,31 @@ service = CategoryService()
 
 
 @router.post("/categories", response_model=CategoryReadDTO)
+@rate_limit_dev_editor_write()
 async def create_category(
-    payload: CategoryCreateDTO, session: AsyncSession = Depends(get_session)
+    request: Request,
+    payload: CategoryCreateDTO, 
+    session: AsyncSession = Depends(get_session_dependency)
 ):
     return await service.create_category(session, payload)
 
 
 @router.get("/categories", response_model=list[CategoryReadDTO])
-async def list_categories(session: AsyncSession = Depends(get_session)):
+@rate_limit_dev_editor_read()
+async def list_categories(
+    request: Request,
+    session: AsyncSession = Depends(get_session_dependency)
+):
     return await service.list_categories(session)
 
 
 @router.get("/categories/{category_id}", response_model=CategoryReadDTO)
-async def get_category(category_id: str, session: AsyncSession = Depends(get_session)):
+@rate_limit_dev_editor_read()
+async def get_category(
+    request: Request,
+    category_id: str, 
+    session: AsyncSession = Depends(get_session_dependency)
+):
     dto = await service.get_category(session, category_id)
     if not dto:
         raise HTTPException(404, "Category not found")
@@ -40,7 +56,12 @@ async def get_category(category_id: str, session: AsyncSession = Depends(get_ses
 
 
 @router.get("/categories/slug/{slug}", response_model=CategoryReadDTO)
-async def get_category_by_slug(slug: str, session: AsyncSession = Depends(get_session)):
+@rate_limit_dev_editor_read()
+async def get_category_by_slug(
+    request: Request,
+    slug: str, 
+    session: AsyncSession = Depends(get_session_dependency)
+):
     dto = await service.get_category_by_slug(session, slug)
     if not dto:
         raise HTTPException(404, "Category not found")
@@ -48,17 +69,22 @@ async def get_category_by_slug(slug: str, session: AsyncSession = Depends(get_se
 
 
 @router.put("/categories/{category_id}", response_model=CategoryReadDTO)
+@rate_limit_dev_editor_write()
 async def update_category(
+    request: Request,
     category_id: str,
     payload: CategoryUpdateDTO,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(get_session_dependency),
 ):
     return await service.update_category(session, category_id, payload)
 
 
 @router.delete("/categories/{category_id}")
+@rate_limit_dev_editor_write()
 async def delete_category(
-    category_id: str, session: AsyncSession = Depends(get_session)
+    request: Request,
+    category_id: str, 
+    session: AsyncSession = Depends(get_session_dependency)
 ):
     await service.delete_category(session, category_id)
     return {"detail": "Category deleted"}

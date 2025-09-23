@@ -14,3 +14,9 @@ typer
 pydantic-settings
 asyncpg
 pydantic
+requests
+google-cloud-storage==2.10.0
+rich==13.7.0
+httpx==0.28.1
+slowapi==0.1.9
+redis==5.0.1

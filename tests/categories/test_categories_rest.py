@@ -43,7 +43,17 @@ async def test_create_duplicate_slug_conflict(client, editor_headers):
 
 @pytest.mark.asyncio
 async def test_list_and_fetch_by_slug(client, editor_headers):
-    # Should list at least the two inserted ones
+    # Create test data first
+    docs_payload = {"name": "Docs", "description": "Documentation", "slug": "docs"}
+    tutorials_payload = {"name": "Tutorials", "description": "Tutorials", "slug": "tutorials"}
+    
+    resp_docs = await client.post("/dev-editor/categories", json=docs_payload, headers=editor_headers)
+    assert resp_docs.status_code == 200
+    
+    resp_tutorials = await client.post("/dev-editor/categories", json=tutorials_payload, headers=editor_headers)
+    assert resp_tutorials.status_code == 200
+    
+    # Should list the inserted ones
     resp = await client.get("/dev-editor/categories", headers=editor_headers)
     assert resp.status_code == 200
     items = resp.json()

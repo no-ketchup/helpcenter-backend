@@ -1,25 +1,51 @@
 from typing import List
 import strawberry
-from sqlmodel import select
-from app.core.db import get_session_cm
-from app.domain.models import Media as MediaModel
-from app.domain.schema import Media as MediaType
-
-
-def to_media(model: MediaModel) -> MediaType:
-    return MediaType(
-        id=str(model.id),
-        alt=model.alt,
-        url=model.url,
-        createdAt=model.created_at,
-        updatedAt=model.updated_at,
-    )
+from app.domain.schema import Media as MediaType, UserGuide as GuideType
+from app.services.media import MediaService
+from app.services.guide import GuideService
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 @strawberry.type
 class MediaQuery:
     @strawberry.field
-    async def media(self) -> List[MediaType]:
-        async with get_session_cm() as session:
-            rows = (await session.exec(select(MediaModel))).all()
-            return [to_media(r) for r in rows]
+    async def media(self, info) -> List[MediaType]:
+        get_session = info.context["get_session"]
+        async with get_session() as session:
+            media_service = MediaService()
+            guide_service = GuideService()
+            
+            # Get media from database
+            media_dto = await media_service.list_media(session)
+            
+            # Convert to GraphQL types
+            result = []
+            for media in media_dto:
+                # Get guides associated with this media
+                guides_dto = await media_service.get_media_guides(session, media.id)
+                
+                # Convert guides to GraphQL types
+                guides = []
+                for guide_dto in guides_dto:
+                    guides.append(GuideType(
+                        id=guide_dto.id,
+                        title=guide_dto.title,
+                        slug=guide_dto.slug,
+                        estimatedReadTime=guide_dto.estimated_read_time,
+                        body=guide_dto.body,
+                        createdAt=guide_dto.created_at,
+                        updatedAt=guide_dto.updated_at,
+                        categories=[],  # Avoid circular reference
+                        media=[]  # Avoid circular reference
+                    ))
+                
+                result.append(MediaType(
+                    id=media.id,
+                    url=media.url,
+                    alt=media.alt,
+                    createdAt=media.created_at,
+                    updatedAt=media.updated_at,
+                    guides=guides
+                ))
+
+            return result

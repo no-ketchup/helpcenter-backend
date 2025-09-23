@@ -1,98 +1,134 @@
-# -------------------------------
-# Defaults
-# -------------------------------
+include .env.local
+export
+
 ENV_FILE ?= .env.local
 COMPOSE = docker compose --env-file $(ENV_FILE)
-ALEMBIC = $(COMPOSE) run --rm -e PYTHONPATH=/app backend alembic -c alembic.ini
 
-# -------------------------------
-# Phony targets
-# -------------------------------
-.PHONY: help migrate revision build up down clean prune test ci-test logs shell \
-        prod-up prod-down prod-clean prod-migrate
+.PHONY: help migrate revision migrate-test build up down clean prune test ci-test \
+        logs logs-backend logs-db logs-redis logs-once shell db-shell db-list \
+        prod-up prod-down prod-clean prod-migrate check-migrations \
+        dev dev-stop health editor test-quick lint format
 
-# -------------------------------
-# Help
-# -------------------------------
 help: ## Show this help
 	@echo "Usage: make [target] [ENV_FILE=.env.local or .env.prod]"
 	@echo ""
-	@echo "Available commands:"
-	@grep -E '^[a-zA-Z0-9_-]+:.*?##' $(MAKEFILE_LIST) \
-		| sed -E 's/:.*##/: ##/' \
-		| column -t -s '##'
+	@echo "Available targets:"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-# -------------------------------
-# Database & Migrations
-# -------------------------------
-migrate: ## Run latest migrations
-	$(ALEMBIC) upgrade head
+migrate: ## Run database migrations
+	python3 scripts/migrate.py --env development
 
-revision: ## Create new migration (usage: make revision m="add users table")
-	$(ALEMBIC) revision --autogenerate -m "$(m)"
+revision: ## Create a new migration
+	@read -p "Enter migration message: " msg; \
+	alembic revision --autogenerate -m "$$msg"
 
-# -------------------------------
-# Containers
-# -------------------------------
-build: ## Build images
+migrate-test: ## Run migrations on test DB
+	python3 scripts/migrate.py --env test --database-url $(TEST_DATABASE_URL_ASYNC)
+
+migrate-prod: ## Run migrations on production DB
+	python3 scripts/migrate.py --env production --database-url $(DATABASE_URL_ASYNC)
+
+build: ## Build Docker images
 	$(COMPOSE) build
 
-up: ## Start stack
+up: ## Start all services
 	$(COMPOSE) up -d
 
-down: ## Stop stack (keep volumes)
-	$(COMPOSE) down --remove-orphans
+down: ## Stop all services
+	$(COMPOSE) down
 
-clean: ## Stop stack and remove volumes (reset project)
+clean: ## Stop services and remove volumes
 	$(COMPOSE) down -v --remove-orphans
 
-prune: ## Global Docker prune (WARNING: nukes all unused containers, images, cache)
-	docker system prune -f
+prune: ## Remove all Docker resources
+	docker system prune -af
 
-# -------------------------------
-# Testing (runs against .env.local DB)
-# -------------------------------
-test: ## Run tests with rollback isolation (using .env.local DB)
+test: ## Run full test suite with cleanup
 	$(MAKE) clean ENV_FILE=.env.local
-	$(COMPOSE) up --build -d
-	$(MAKE) migrate ENV_FILE=.env.local
-	$(COMPOSE) exec -T backend pytest -v
+	$(COMPOSE) up -d db redis
+	sleep 5  # Wait for services to be ready
+	$(COMPOSE) run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test backend python3 scripts/migrate.py --env test --database-url $(TEST_DATABASE_URL_ASYNC)
+	$(COMPOSE) run --rm \
+		-e PYTHONPATH=/code \
+		-e ENVIRONMENT=test \
+		-e PYTHONDONTWRITEBYTECODE=1 \
+		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
 	$(MAKE) clean ENV_FILE=.env.local
+
+test-quick: ## Run tests without cleanup (faster for development)
+	$(COMPOSE) run --rm \
+		-e PYTHONPATH=/code \
+		-e ENVIRONMENT=test \
+		-e PYTHONDONTWRITEBYTECODE=1 \
+		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
 
 ci-test: ## CI mode: reset, abort on exit, propagate exit code
 	$(MAKE) clean ENV_FILE=.env.local
-	$(COMPOSE) up --build --abort-on-container-exit --exit-code-from backend
+	$(COMPOSE) up -d db redis
+	$(COMPOSE) run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test backend python3 scripts/migrate.py --env test --database-url $(TEST_DATABASE_URL_ASYNC)
+	$(COMPOSE) run --rm \
+		-e PYTHONPATH=/code \
+		-e ENVIRONMENT=test \
+		-e PYTHONDONTWRITEBYTECODE=1 \
+		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
 	$(MAKE) clean ENV_FILE=.env.local
 
-# -------------------------------
-# Utilities
-# -------------------------------
-logs: ## Tail logs for all services
+logs: ## Show logs for all services
 	$(COMPOSE) logs -f
 
-logs-backend: ## Tail logs only for backend
+logs-backend: ## Show backend logs
 	$(COMPOSE) logs -f backend
 
-logs-db: ## Tail logs only for database
+logs-db: ## Show database logs
 	$(COMPOSE) logs -f db
 
-logs-once: ## Show logs once for backend
-	$(COMPOSE) logs backend
+logs-redis: ## Show Redis logs
+	$(COMPOSE) logs -f redis
 
-shell: ## Open shell in backend
-	$(COMPOSE) exec backend bash
+logs-once: ## Show logs once
+	$(COMPOSE) logs
 
-# -------------------------------
-# Production (with .env.prod)
-# -------------------------------
-prod-up: ## Start stack with .env.prod
+shell: ## Open shell in backend container
+	$(COMPOSE) run --rm backend bash
+
+editor: ## Run the help center editor
+	python scripts/demo/editor.py
+
+db-shell: ## Open database shell
+	$(COMPOSE) exec db psql -U helpcenter_devuser -d helpcenter_devdb
+
+db-list: ## List databases
+	$(COMPOSE) exec db psql -U helpcenter_devuser -c "\l"
+
+prod-up: ## Start production services
 	$(MAKE) up ENV_FILE=.env.prod
 
-prod-down: ## Stop stack (keep volumes) with .env.prod
+prod-down: ## Stop production services
 	$(MAKE) down ENV_FILE=.env.prod
 
-prod-clean: ## Stop stack and remove volumes with .env.prod
+prod-clean: ## Clean production resources
 	$(MAKE) clean ENV_FILE=.env.prod
 
-prod-migrate: ## Run migrations with .env.prod
+prod-migrate: ## Run production migrations
 	$(MAKE) migrate ENV_FILE=.env.prod
+
+check-migrations: ## Check migration status
+	python3 scripts/migrate.py --check
+
+dev: ## Start development environment (backend + db + redis)
+	$(COMPOSE) up -d db redis
+	sleep 3
+	$(MAKE) migrate
+	$(COMPOSE) up backend
+
+dev-stop: ## Stop development environment
+	$(COMPOSE) down
+
+health: ## Check API health
+	curl -s http://localhost:8000/health | jq
+
+lint: ## Run code linting
+	$(COMPOSE) run --rm backend bash -c 'cd /code && python -m flake8 app/ --max-line-length=100 --ignore=E203,W503'
+
+format: ## Format code with black
+	$(COMPOSE) run --rm backend bash -c 'cd /code && python -m black app/ --line-length=100'

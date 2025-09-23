@@ -3,30 +3,25 @@ import sys
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import pool, create_engine
-from sqlmodel import SQLModel
+from sqlalchemy import create_engine, pool
 
-# Add project root to sys.path
+# Add project root to sys.spath
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core import settings
-from app.domain import models  # noqa: F401
 
-# Alembic Config object
+# Alembic Config
 config = context.config
-
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Pick up DB URL from settings (works for SQLite or Postgres)
-db_url = settings.DATABASE_URL
+# Database URL
+db_url = settings.ACTIVE_DATABASE_URL
 config.set_main_option("sqlalchemy.url", db_url)
+print(f"[alembic] Using ACTIVE_DATABASE_URL = {db_url}", file=sys.stderr)
 
-# Debug print
-print(f"[alembic] Using DATABASE_URL = {db_url}", file=sys.stderr)
-
-# Target metadata
-target_metadata = SQLModel.metadata
+from app.domain import models
+target_metadata = models.metadata
 
 
 def run_migrations_offline():
@@ -45,17 +40,8 @@ def run_migrations_online():
     """Run migrations in 'online' mode (applies to DB)."""
     connectable = create_engine(db_url, poolclass=pool.NullPool, future=True)
 
-    # Special handling for SQLite (disable FK pragma errors)
-    if db_url.startswith("sqlite"):
-        connectable = create_engine(
-            db_url,
-            connect_args={"check_same_thread": False},
-            future=True,
-        )
-
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
-
         with context.begin_transaction():
             context.run_migrations()
 

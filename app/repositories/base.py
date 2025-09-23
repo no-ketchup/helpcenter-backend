@@ -1,21 +1,26 @@
+"""
+Base repository for SQLModel entities.
+
+Provides generic CRUD operations with async SQLAlchemy sessions.
+Caller controls transaction commits/rollbacks.
+"""
+
 from typing import Generic, TypeVar, Type, Optional
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import SQLModel, select
+from sqlmodel import SQLModel
 from sqlalchemy import select as sa_select
 
 T = TypeVar("T", bound=SQLModel)
 
 
 class BaseRepository(Generic[T]):
-    """Generic async repository for SQLModel entities.
-    Does not commit/rollback — caller controls transactions.
-    """
+    """Generic async repository for SQLModel entities."""
 
     def __init__(self, model: Type[T]):
         self.model = model
 
     async def create(self, session: AsyncSession, obj: T) -> T:
-        """Stage a new object for insertion (no commit)."""
+        """Stage a new object for insertion."""
         session.add(obj)
         return obj
 
@@ -25,28 +30,25 @@ class BaseRepository(Generic[T]):
 
     async def list(self, session: AsyncSession) -> list[T]:
         """Fetch all objects."""
-        result = await session.exec(select(self.model))
-        return result.all()
+        result = await session.execute(sa_select(self.model))
+        return result.scalars().all()
 
-    async def update(self, session: AsyncSession, id: str | int, **kwargs) -> Optional[T]:
-        """Apply updates to an object by id (no commit)."""
-        obj = await session.get(self.model, id)
-        if not obj:
-            return None
-        for k, v in kwargs.items():
-            setattr(obj, k, v)
+    async def update(self, session: AsyncSession, obj: T) -> T:
+        """Stage an object for update."""
+        session.add(obj)
         return obj
 
     async def delete(self, session: AsyncSession, id: str | int) -> bool:
-        """Stage an object for deletion (no commit)."""
+        """Delete an object by primary key."""
         obj = await session.get(self.model, id)
-        if not obj:
-            return False
-        await session.delete(obj)
-        return True
+        if obj:
+            await session.delete(obj)
+            return True
+        return False
 
-    async def get_by_field(self, session: AsyncSession, field: str, value) -> Optional[T]:
-        """Fetch first object where a given field == value."""
+    async def get_by_field(self, session: AsyncSession, field: str, value: any) -> Optional[T]:
+        """Get an object by a specific field value."""
+        from sqlalchemy import select as sa_select
         stmt = sa_select(self.model).where(getattr(self.model, field) == value)
-        result = await session.exec(stmt)
-        return result.first()
+        result = await session.execute(stmt)
+        return result.scalars().first()

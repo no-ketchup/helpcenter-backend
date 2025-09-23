@@ -6,10 +6,23 @@ services:
     env_file: .env.local
     volumes:
       - ${DB_VOLUME:-db_data}:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    container_name: helpcenter-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,15 +38,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - .env.local
     volumes:
-      - .:/app
+      - .:/code
     ports:
-      - "${APP_PORT:-8000}:8000"
+      - "8000:8000"
     command: >
       sh -c "
-      PYTHONPATH=/app ${APP_COMMAND:-uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000} --reload}
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
 volumes:

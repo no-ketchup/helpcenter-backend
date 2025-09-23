@@ -20,5 +20,3 @@ class UserGuide:
 
     categories: List[Annotated["Category", strawberry.lazy(".category")]]
     media: list[Annotated["Media", strawberry.lazy(".media")]]
-
-# to-do: fix the lazy type
