@@ -21,3 +21,9 @@ steps:
 images:
   - 'gcr.io/${PROJECT_ID}/helpcenter-backend:${_TAG}'
   - 'gcr.io/${PROJECT_ID}/helpcenter-backend:latest'
+
+options:
+  dynamicSubstitutions: true
+
+substitutions:
+  _TAG: 'UNKNOWN' # Default value, will be overridden by deploy script
