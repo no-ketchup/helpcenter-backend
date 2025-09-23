@@ -19,6 +19,9 @@ TAG=${GITHUB_SHA:-latest}
 
 echo "Deploying to Cloud Run: ${SERVICE_NAME} (image tag: ${TAG})"
 
+# Build and push image
+echo "Building and pushing Docker image..."
+gcloud builds submit . --config cloudbuild.yaml --substitutions=_TAG=${TAG},_PROJECT_ID=${PROJECT_ID}
 
 # Deploy to Cloud Run using the pre-built image
 echo "Deploying to Cloud Run..."
