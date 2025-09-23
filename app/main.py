@@ -3,6 +3,7 @@ Help Center Backend - Main FastAPI Application
 
 A production-ready help center backend with GraphQL and REST APIs.
 """
+
 import os
 import tempfile
 from contextlib import asynccontextmanager
