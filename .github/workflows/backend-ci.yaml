@@ -180,7 +180,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    environment: production
+    environment: prod
 
     steps:
     - name: Checkout code
