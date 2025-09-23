@@ -16,5 +16,5 @@ class FeedbackMutation:
             email=email,
             message=message,
             expectReply=expectReply,
-            createdAt=datetime.now()
+            createdAt=datetime.now(),
         )

@@ -10,7 +10,7 @@ from app.services.media import MediaService
 from app.core.rate_limiting import (
     rate_limit_dev_editor_read,
     rate_limit_dev_editor_write,
-    rate_limit_dev_editor_upload
+    rate_limit_dev_editor_upload,
 )
 
 router = APIRouter(
@@ -29,32 +29,25 @@ async def upload_media(
     file: UploadFile = File(...),
     alt: Optional[str] = Form(None),
     guide_id: Optional[str] = Form(None),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     """Upload media file to Cloudinary."""
-    if not file.content_type.startswith(('image/', 'video/')):
+    if not file.content_type.startswith(("image/", "video/")):
         raise HTTPException(status_code=400, detail="Only image and video files are allowed")
-    
+
     return await service.upload_media(session, file, alt, guide_id)
 
 
 @router.get("/media", response_model=list[MediaReadDTO])
 @rate_limit_dev_editor_read()
-async def list_media(
-    request: Request,
-    session: AsyncSession = Depends(get_session)
-):
+async def list_media(request: Request, session: AsyncSession = Depends(get_session)):
     """List all media."""
     return await service.list_media(session)
 
 
 @router.get("/media/{media_id}", response_model=MediaReadDTO)
 @rate_limit_dev_editor_read()
-async def get_media(
-    request: Request,
-    media_id: UUID,
-    session: AsyncSession = Depends(get_session)
-):
+async def get_media(request: Request, media_id: UUID, session: AsyncSession = Depends(get_session)):
     """Get media by ID."""
     media = await service.get_media(session, media_id)
     if not media:
@@ -65,9 +58,7 @@ async def get_media(
 @router.delete("/media/{media_id}")
 @rate_limit_dev_editor_write()
 async def delete_media(
-    request: Request,
-    media_id: UUID,
-    session: AsyncSession = Depends(get_session)
+    request: Request, media_id: UUID, session: AsyncSession = Depends(get_session)
 ):
     """Delete media."""
     await service.delete_media(session, media_id)
@@ -81,13 +72,13 @@ async def get_optimized_media(
     media_id: UUID,
     width: Optional[int] = None,
     height: Optional[int] = None,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     """Get optimized media URL."""
     media = await service.get_media(session, media_id)
     if not media:
         raise HTTPException(status_code=404, detail="Media not found")
-    
+
     optimized_url = service.get_optimized_url(media.url, width, height)
     return {"url": optimized_url}
 
@@ -96,10 +87,7 @@ async def get_optimized_media(
 @router.post("/guides/{guide_id}/media/{media_id}")
 @rate_limit_dev_editor_write()
 async def attach_media_to_guide(
-    request: Request,
-    guide_id: UUID,
-    media_id: UUID,
-    session: AsyncSession = Depends(get_session)
+    request: Request, guide_id: UUID, media_id: UUID, session: AsyncSession = Depends(get_session)
 ):
     """Attach media to a guide."""
     await service.attach_to_guide(session, media_id, guide_id)
@@ -109,10 +97,7 @@ async def attach_media_to_guide(
 @router.delete("/guides/{guide_id}/media/{media_id}")
 @rate_limit_dev_editor_write()
 async def detach_media_from_guide(
-    request: Request,
-    guide_id: UUID,
-    media_id: UUID,
-    session: AsyncSession = Depends(get_session)
+    request: Request, guide_id: UUID, media_id: UUID, session: AsyncSession = Depends(get_session)
 ):
     """Detach media from a guide."""
     await service.detach_from_guide(session, media_id, guide_id)
@@ -122,9 +107,7 @@ async def detach_media_from_guide(
 @router.get("/guides/{guide_id}/media", response_model=list[MediaReadDTO])
 @rate_limit_dev_editor_read()
 async def get_guide_media(
-    request: Request,
-    guide_id: UUID,
-    session: AsyncSession = Depends(get_session)
+    request: Request, guide_id: UUID, session: AsyncSession = Depends(get_session)
 ):
     """Get all media attached to a guide."""
     return await service.get_guide_media(session, guide_id)

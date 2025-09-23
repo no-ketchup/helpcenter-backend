@@ -25,18 +25,20 @@ def _new_engine():
         "echo": settings.DEBUG,
         "future": True,
     }
-    
+
     if settings.ENVIRONMENT == "test":
         kwargs["poolclass"] = NullPool
     else:
-        kwargs.update({
-            "poolclass": AsyncAdaptedQueuePool,
-            "pool_size": settings.DB_POOL_SIZE,
-            "max_overflow": settings.DB_MAX_OVERFLOW,
-            "pool_pre_ping": True,
-            "pool_recycle": settings.DB_POOL_RECYCLE,
-        })
-    
+        kwargs.update(
+            {
+                "poolclass": AsyncAdaptedQueuePool,
+                "pool_size": settings.DB_POOL_SIZE,
+                "max_overflow": settings.DB_MAX_OVERFLOW,
+                "pool_pre_ping": True,
+                "pool_recycle": settings.DB_POOL_RECYCLE,
+            }
+        )
+
     return create_async_engine(settings.DATABASE_URL, **kwargs)
 
 
@@ -53,9 +55,7 @@ def get_async_session_factory():
     global _async_session_factory
     if _async_session_factory is None:
         _async_session_factory = sessionmaker(
-            bind=get_engine(),
-            class_=AsyncSession,
-            expire_on_commit=False
+            bind=get_engine(), class_=AsyncSession, expire_on_commit=False
         )
     return _async_session_factory
 

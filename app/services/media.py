@@ -16,7 +16,7 @@ from app.core.settings import GCS_BUCKET_NAME, GOOGLE_APPLICATION_CREDENTIALS
 class MediaService:
     def __init__(self, repo: MediaRepository | None = None):
         self.repo = repo or MediaRepository()
-        
+
         # Configure Google Cloud Storage
         self.gcs_client = None
         if GCS_BUCKET_NAME and GOOGLE_APPLICATION_CREDENTIALS:
@@ -35,34 +35,34 @@ class MediaService:
                 bucket = self.gcs_client.bucket(self.bucket_name)
                 filename = f"helpcenter/{file.filename}_{int(time.time())}"
                 blob = bucket.blob(filename)
-                
+
                 # Upload file content
                 file.file.seek(0)  # Reset file pointer
                 blob.upload_from_file(file.file, content_type=file.content_type)
-                
+
                 # Make blob publicly readable
                 blob.make_public()
                 url = blob.public_url
             else:
                 # Mock URL for testing without GCS
-                url = f"https://via.placeholder.com/300x200/0066CC/FFFFFF?text={file.filename or 'uploaded-image'}"
-            
+                url = (
+                    f"https://via.placeholder.com/300x200/0066CC/FFFFFF"
+                    f"?text={file.filename or 'uploaded-image'}"
+                )
+
             # Create media record
-            media_dto = MediaCreateDTO(
-                url=url,
-                alt=alt or file.filename
-            )
-            
+            media_dto = MediaCreateDTO(url=url, alt=alt or file.filename)
+
             media = await self.repo.create_from_dto(session, media_dto)
             await session.commit()
             await session.refresh(media)
-            
+
             # If guide_id is provided, attach media to guide
             if guide_id:
                 await self.attach_to_guide(session, media.id, UUID(guide_id))
-            
+
             return MediaReadDTO.model_validate(media)
-            
+
         except Exception as e:
             await session.rollback()
             raise HTTPException(status_code=500, detail=f"Failed to upload media: {str(e)}")
@@ -80,7 +80,7 @@ class MediaService:
         media = await self.repo.get(session, id)
         if not media:
             raise HTTPException(status_code=404, detail="Media not found")
-        
+
         try:
             # Delete from Google Cloud Storage if GCS is configured
             if self.gcs_client and self.bucket_name and "storage.googleapis.com" in media.url:
@@ -89,59 +89,54 @@ class MediaService:
                 blob_name = media.url.split(f"{self.bucket_name}/")[-1]
                 blob = bucket.blob(blob_name)
                 blob.delete()
-            
+
             # Delete from database
             await self.repo.delete(session, id)
             await session.commit()
-            
+
         except Exception as e:
             await session.rollback()
             raise HTTPException(status_code=500, detail=f"Failed to delete media: {str(e)}")
 
-
     async def attach_to_guide(self, session: AsyncSession, media_id: UUID, guide_id: UUID) -> None:
         """Attach media to a guide."""
         from app.domain.models import GuideMediaLink
-        
+
         # Check if association already exists
         stmt = sa_select(GuideMediaLink).where(
-            GuideMediaLink.media_id == media_id,
-            GuideMediaLink.guide_id == guide_id
+            GuideMediaLink.media_id == media_id, GuideMediaLink.guide_id == guide_id
         )
         result = await session.execute(stmt)
         if result.scalars().first():
             return  # Already attached
-        
+
         # Create association
         link = GuideMediaLink(media_id=media_id, guide_id=guide_id)
         session.add(link)
         await session.commit()
-    
-    async def detach_from_guide(self, session: AsyncSession, media_id: UUID, guide_id: UUID) -> None:
+
+    async def detach_from_guide(
+        self, session: AsyncSession, media_id: UUID, guide_id: UUID
+    ) -> None:
         """Detach media from a guide."""
         from app.domain.models import GuideMediaLink
         from sqlalchemy import delete as sa_delete
-        
+
         stmt = sa_delete(GuideMediaLink).where(
-            GuideMediaLink.media_id == media_id,
-            GuideMediaLink.guide_id == guide_id
+            GuideMediaLink.media_id == media_id, GuideMediaLink.guide_id == guide_id
         )
         await session.execute(stmt)
         await session.commit()
-    
+
     async def get_guide_media(self, session: AsyncSession, guide_id: UUID) -> List[MediaReadDTO]:
         """Get all media attached to a specific guide."""
         from app.domain.models import GuideMediaLink
         from sqlalchemy import select as sa_select
-        
-        stmt = (
-            sa_select(MediaModel)
-            .join(GuideMediaLink)
-            .where(GuideMediaLink.guide_id == guide_id)
-        )
+
+        stmt = sa_select(MediaModel).join(GuideMediaLink).where(GuideMediaLink.guide_id == guide_id)
         result = await session.execute(stmt)
         media_list = result.scalars().all()
-        
+
         return [MediaReadDTO.model_validate(media) for media in media_list]
 
     async def get_media_guides(self, session: AsyncSession, media_id: UUID) -> List:
@@ -149,15 +144,11 @@ class MediaService:
         from app.domain.models import GuideMediaLink, UserGuide
         from app.domain.dtos.guide import GuideReadDTO
         from sqlalchemy import select as sa_select
-        
-        stmt = (
-            sa_select(UserGuide)
-            .join(GuideMediaLink)
-            .where(GuideMediaLink.media_id == media_id)
-        )
+
+        stmt = sa_select(UserGuide).join(GuideMediaLink).where(GuideMediaLink.media_id == media_id)
         result = await session.execute(stmt)
         guides_list = result.scalars().all()
-        
+
         return [GuideReadDTO.model_validate(guide) for guide in guides_list]
 
     def get_optimized_url(self, url: str, width: int = None, height: int = None) -> str:
@@ -169,17 +160,13 @@ class MediaService:
                 # Extract bucket and blob name from URL
                 bucket_name = url.split("//")[1].split(".")[0]
                 blob_name = url.split(f"{bucket_name}/")[-1]
-                
+
                 bucket = self.gcs_client.bucket(bucket_name)
                 blob = bucket.blob(blob_name)
-                
+
                 # Generate signed URL with expiration (1 hour)
-                url = blob.generate_signed_url(
-                    version="v4",
-                    expiration=3600,
-                    method="GET"
-                )
-            except:
+                url = blob.generate_signed_url(version="v4", expiration=3600, method="GET")
+            except Exception:
                 pass  # Return original URL if signing fails
-        
+
         return url

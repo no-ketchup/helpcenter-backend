@@ -21,7 +21,7 @@ class MediaReadDTO(BaseModel):
     alt: Optional[str]
     created_at: datetime = Field(alias="createdAt")
     updated_at: Optional[datetime] = Field(alias="updatedAt")
-    
+
     class Config:
         from_attributes = True
         populate_by_name = True

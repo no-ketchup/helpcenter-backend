@@ -2,7 +2,6 @@ from sqlmodel import SQLModel, Field, Column
 from sqlalchemy import DateTime
 from uuid import UUID, uuid4
 from datetime import datetime
-from typing import Optional
 from app.utils.time import utcnow
 
 
@@ -15,4 +14,6 @@ class Feedback(SQLModel, table=True):
     message: str = Field(nullable=False)
     expect_reply: bool = Field(default=False)
 
-    created_at: datetime = Field(sa_column=Column(DateTime(timezone=True), default=utcnow, nullable=False))
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    )

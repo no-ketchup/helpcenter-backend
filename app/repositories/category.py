@@ -1,5 +1,4 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 
 from app.repositories.base import BaseRepository
@@ -18,7 +17,9 @@ class CategoryRepository(BaseRepository[Category]):
         session.add(obj)
         return obj
 
-    async def update_from_dto(self, session: AsyncSession, id: str, dto: CategoryUpdateDTO) -> Category:
+    async def update_from_dto(
+        self, session: AsyncSession, id: str, dto: CategoryUpdateDTO
+    ) -> Category:
         """Stage updates on a Category. Caller must commit/refresh."""
         obj = await self.get(session, id)
         if not obj:

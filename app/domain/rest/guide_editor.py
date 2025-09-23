@@ -10,10 +10,7 @@ from app.domain.dtos.guide import (
 )
 from .editor_guard import verify_dev_editor_key
 from app.services.guide import GuideService
-from app.core.rate_limiting import (
-    rate_limit_dev_editor_read,
-    rate_limit_dev_editor_write
-)
+from app.core.rate_limiting import rate_limit_dev_editor_read, rate_limit_dev_editor_write
 
 router = APIRouter(
     prefix="/dev-editor",
@@ -27,9 +24,7 @@ service = GuideService()
 @router.post("/guides", response_model=GuideReadDTO)
 @rate_limit_dev_editor_write()
 async def create_guide(
-    request: Request,
-    payload: GuideCreateDTO, 
-    session: AsyncSession = Depends(get_session)
+    request: Request, payload: GuideCreateDTO, session: AsyncSession = Depends(get_session)
 ):
     """Create a new guide with rich text content."""
     return await service.create_guide(session, payload)
@@ -40,7 +35,7 @@ async def create_guide(
 async def list_guides(
     request: Request,
     category_slug: str | None = Query(None, description="Filter by category slug"),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     """List guides, optionally filtered by category."""
     return await service.list_guides(session, category_slug)
@@ -48,11 +43,7 @@ async def list_guides(
 
 @router.get("/guides/{guide_id}", response_model=GuideReadDTO)
 @rate_limit_dev_editor_read()
-async def get_guide(
-    request: Request,
-    guide_id: UUID, 
-    session: AsyncSession = Depends(get_session)
-):
+async def get_guide(request: Request, guide_id: UUID, session: AsyncSession = Depends(get_session)):
     """Get a guide by ID."""
     dto = await service.get_guide(session, guide_id)
     if not dto:
@@ -63,9 +54,7 @@ async def get_guide(
 @router.get("/guides/slug/{slug}", response_model=GuideReadDTO)
 @rate_limit_dev_editor_read()
 async def get_guide_by_slug(
-    request: Request,
-    slug: str, 
-    session: AsyncSession = Depends(get_session)
+    request: Request, slug: str, session: AsyncSession = Depends(get_session)
 ):
     """Get a guide by slug."""
     dto = await service.get_guide_by_slug(session, slug)
@@ -89,9 +78,7 @@ async def update_guide(
 @router.delete("/guides/{guide_id}")
 @rate_limit_dev_editor_write()
 async def delete_guide(
-    request: Request,
-    guide_id: UUID, 
-    session: AsyncSession = Depends(get_session)
+    request: Request, guide_id: UUID, session: AsyncSession = Depends(get_session)
 ):
     """Delete a guide."""
     await service.delete_guide(session, guide_id)

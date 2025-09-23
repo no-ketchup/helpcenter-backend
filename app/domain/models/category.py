@@ -19,7 +19,11 @@ class Category(SQLModel, table=True):
     description: Optional[str] = Field(default=None)
     slug: str = Field(unique=True, index=True, nullable=False)
 
-    created_at: datetime = Field(sa_column=Column(DateTime(timezone=True), default=utcnow, nullable=False))
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    )
     updated_at: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True)))
 
-    guides: List["UserGuide"] = Relationship(back_populates="categories", link_model=GuideCategoryLink)
+    guides: List["UserGuide"] = Relationship(
+        back_populates="categories", link_model=GuideCategoryLink
+    )

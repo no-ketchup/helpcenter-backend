@@ -49,6 +49,7 @@ class BaseRepository(Generic[T]):
     async def get_by_field(self, session: AsyncSession, field: str, value: any) -> Optional[T]:
         """Get an object by a specific field value."""
         from sqlalchemy import select as sa_select
+
         stmt = sa_select(self.model).where(getattr(self.model, field) == value)
         result = await session.execute(stmt)
         return result.scalars().first()

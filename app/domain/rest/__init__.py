@@ -3,7 +3,7 @@ REST API routers for the help center application.
 
 This module contains all REST API endpoints organized by domain:
 - dev_editor: Development editor endpoints
-- guide_editor: Guide management endpoints  
+- guide_editor: Guide management endpoints
 - media_editor: Media management endpoints
 - editor_guard: Authentication/authorization for editor endpoints
 """
@@ -15,7 +15,7 @@ from .editor_guard import verify_dev_editor_key
 
 __all__ = [
     "dev_editor_router",
-    "guide_editor_router", 
+    "guide_editor_router",
     "media_editor_router",
     "verify_dev_editor_key",
 ]

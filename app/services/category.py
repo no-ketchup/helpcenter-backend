@@ -8,7 +8,6 @@ from app.domain.dtos.category import (
     CategoryUpdateDTO,
     CategoryReadDTO,
 )
-from app.domain.models import Category
 
 
 class CategoryService:

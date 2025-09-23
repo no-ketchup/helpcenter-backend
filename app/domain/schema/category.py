@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Annotated, List
 if TYPE_CHECKING:
     from .guide import UserGuide
 
+
 @strawberry.type
 class Category:
     id: str

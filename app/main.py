@@ -20,11 +20,11 @@ from app.core.middleware import RequestLoggingMiddleware
 from app.core.settings import ENVIRONMENT, LOG_LEVEL, ALLOWED_ORIGINS
 from app.core.validation import create_error_response, handle_validation_error
 from app.core.rate_limiting import (
-    setup_rate_limiting, 
-    limiter, 
-    rate_limit_graphql_query, 
-    rate_limit_graphql_mutation
+    setup_rate_limiting,
+    limiter,
 )
+from app.domain.resolvers import Query, Mutation
+from app.domain.rest import dev_editor_router, guide_editor_router, media_editor_router
 
 
 @asynccontextmanager
@@ -41,13 +41,13 @@ app = FastAPI(
     title="Help Center Backend",
     description="A production-ready help center backend with GraphQL and REST APIs",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 
 class GraphQLCORSMiddleware(BaseHTTPMiddleware):
     """Custom CORS middleware for GraphQL OPTIONS requests."""
-    
+
     async def dispatch(self, request: Request, call_next):
         if request.method == "OPTIONS" and request.url.path == "/graphql":
             return Response(
@@ -57,7 +57,7 @@ class GraphQLCORSMiddleware(BaseHTTPMiddleware):
                     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
                     "Access-Control-Allow-Headers": "Content-Type, Authorization",
                     "Access-Control-Max-Age": "86400",
-                }
+                },
             )
         response = await call_next(request)
         return response
@@ -83,18 +83,20 @@ app.add_middleware(
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle Pydantic validation errors."""
     correlation_id = get_correlation_id()
-    request_id = getattr(request.state, 'request_id', None)
-    
+    request_id = getattr(request.state, "request_id", None)
+
     details = []
     for error in exc.errors():
         field = ".".join(str(loc) for loc in error["loc"])
-        details.append({
-            "field": field,
-            "message": error["msg"],
-            "value": error.get("input"),
-            "code": error["type"]
-        })
-    
+        details.append(
+            {
+                "field": field,
+                "message": error["msg"],
+                "value": error.get("input"),
+                "code": error["type"],
+            }
+        )
+
     return JSONResponse(
         status_code=422,
         content={
@@ -102,8 +104,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "message": "Input validation failed",
             "details": details,
             "correlation_id": correlation_id,
-            "request_id": request_id
-        }
+            "request_id": request_id,
+        },
     )
 
 
@@ -111,12 +113,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def pydantic_validation_exception_handler(request: Request, exc: ValidationError):
     """Handle Pydantic ValidationError."""
     correlation_id = get_correlation_id()
-    request_id = getattr(request.state, 'request_id', None)
-    
+    request_id = getattr(request.state, "request_id", None)
+
     return create_error_response(
-        handle_validation_error(exc, correlation_id, request_id),
-        correlation_id,
-        request_id
+        handle_validation_error(exc, correlation_id, request_id), correlation_id, request_id
     )
 
 
@@ -124,19 +124,20 @@ async def pydantic_validation_exception_handler(request: Request, exc: Validatio
 async def general_exception_handler(request: Request, exc: Exception):
     """Handle all other exceptions."""
     correlation_id = get_correlation_id()
-    request_id = getattr(request.state, 'request_id', None)
-    
+    request_id = getattr(request.state, "request_id", None)
+
     return create_error_response(exc, correlation_id, request_id)
 
 
-from app.domain.resolvers import Query, Mutation
-
 schema = strawberry.Schema(query=Query, mutation=Mutation)
+
 
 async def get_context():
     return {"get_session": get_session}
 
+
 graphql_app = GraphQLRouter(schema, allow_queries_via_get=True, context_getter=get_context)
+
 
 @app.options("/graphql")
 @limiter.limit("1000/hour")
@@ -148,20 +149,17 @@ async def graphql_options(request: Request):
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Access-Control-Max-Age": "86400",
-        }
+        },
     )
+
 
 app.include_router(graphql_app, prefix="/graphql")
 
-from app.domain.rest import (
-    dev_editor_router,
-    guide_editor_router,
-    media_editor_router
-)
 
 app.include_router(dev_editor_router)
 app.include_router(guide_editor_router)
 app.include_router(media_editor_router)
+
 
 @app.get("/health")
 @limiter.limit("1000/hour")

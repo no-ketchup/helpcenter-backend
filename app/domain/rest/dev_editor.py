@@ -9,10 +9,7 @@ from app.domain.dtos.category import (
 )
 from .editor_guard import verify_dev_editor_key
 from app.services.category import CategoryService
-from app.core.rate_limiting import (
-    rate_limit_dev_editor_read,
-    rate_limit_dev_editor_write
-)
+from app.core.rate_limiting import rate_limit_dev_editor_read, rate_limit_dev_editor_write
 
 router = APIRouter(
     prefix="/dev-editor",
@@ -27,8 +24,8 @@ service = CategoryService()
 @rate_limit_dev_editor_write()
 async def create_category(
     request: Request,
-    payload: CategoryCreateDTO, 
-    session: AsyncSession = Depends(get_session_dependency)
+    payload: CategoryCreateDTO,
+    session: AsyncSession = Depends(get_session_dependency),
 ):
     return await service.create_category(session, payload)
 
@@ -36,8 +33,7 @@ async def create_category(
 @router.get("/categories", response_model=list[CategoryReadDTO])
 @rate_limit_dev_editor_read()
 async def list_categories(
-    request: Request,
-    session: AsyncSession = Depends(get_session_dependency)
+    request: Request, session: AsyncSession = Depends(get_session_dependency)
 ):
     return await service.list_categories(session)
 
@@ -45,9 +41,7 @@ async def list_categories(
 @router.get("/categories/{category_id}", response_model=CategoryReadDTO)
 @rate_limit_dev_editor_read()
 async def get_category(
-    request: Request,
-    category_id: str, 
-    session: AsyncSession = Depends(get_session_dependency)
+    request: Request, category_id: str, session: AsyncSession = Depends(get_session_dependency)
 ):
     dto = await service.get_category(session, category_id)
     if not dto:
@@ -58,9 +52,7 @@ async def get_category(
 @router.get("/categories/slug/{slug}", response_model=CategoryReadDTO)
 @rate_limit_dev_editor_read()
 async def get_category_by_slug(
-    request: Request,
-    slug: str, 
-    session: AsyncSession = Depends(get_session_dependency)
+    request: Request, slug: str, session: AsyncSession = Depends(get_session_dependency)
 ):
     dto = await service.get_category_by_slug(session, slug)
     if not dto:
@@ -82,9 +74,7 @@ async def update_category(
 @router.delete("/categories/{category_id}")
 @rate_limit_dev_editor_write()
 async def delete_category(
-    request: Request,
-    category_id: str, 
-    session: AsyncSession = Depends(get_session_dependency)
+    request: Request, category_id: str, session: AsyncSession = Depends(get_session_dependency)
 ):
     await service.delete_category(session, category_id)
     return {"detail": "Category deleted"}

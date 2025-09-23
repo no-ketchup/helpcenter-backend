@@ -2,6 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 import strawberry
 
+
 @strawberry.type
 class Feedback:
     id: str

@@ -18,7 +18,9 @@ class Media(SQLModel, table=True):
     alt: Optional[str] = Field(default=None)
     url: str = Field(nullable=False)
 
-    created_at: datetime = Field(sa_column=Column(DateTime(timezone=True), default=utcnow, nullable=False))
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    )
     updated_at: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True)))
 
     guides: List["UserGuide"] = Relationship(back_populates="media", link_model=GuideMediaLink)

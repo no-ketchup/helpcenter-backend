@@ -1,6 +1,7 @@
 from fastapi import Header, HTTPException, status
 from app.core import settings
 
+
 async def verify_dev_editor_key(x_dev_editor_key: str = Header(...)) -> None:
     """
     Guard for dev-editor endpoints.

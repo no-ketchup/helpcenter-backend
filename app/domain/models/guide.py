@@ -19,8 +19,12 @@ class UserGuide(SQLModel, table=True):
     body: dict = Field(sa_column=Column(JSON, nullable=False))
     estimated_read_time: int = Field(nullable=False)
 
-    created_at: datetime = Field(sa_column=Column(DateTime(timezone=True), default=utcnow, nullable=False))
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    )
     updated_at: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True)))
 
-    categories: List["Category"] = Relationship(back_populates="guides", link_model=GuideCategoryLink)
+    categories: List["Category"] = Relationship(
+        back_populates="guides", link_model=GuideCategoryLink
+    )
     media: List["Media"] = Relationship(back_populates="guides", link_model=GuideMediaLink)

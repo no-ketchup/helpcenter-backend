@@ -21,6 +21,7 @@ config.set_main_option("sqlalchemy.url", db_url)
 print(f"[alembic] Using ACTIVE_DATABASE_URL = {db_url}", file=sys.stderr)
 
 from app.domain import models
+
 target_metadata = models.metadata
 
 

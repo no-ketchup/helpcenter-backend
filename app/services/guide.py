@@ -15,9 +15,7 @@ class GuideService:
     def __init__(self, repo: GuideRepository | None = None):
         self.repo = repo or GuideRepository()
 
-    async def create_guide(
-        self, session: AsyncSession, dto: GuideCreateDTO
-    ) -> GuideReadDTO:
+    async def create_guide(self, session: AsyncSession, dto: GuideCreateDTO) -> GuideReadDTO:
         """Create a new guide with rich text content."""
         obj = await self.repo.create_from_dto(session, dto)
         try:
@@ -67,9 +65,7 @@ class GuideService:
         """Get a guide by ID."""
         return await self.repo.get_read(session, id)
 
-    async def get_guide_by_slug(
-        self, session: AsyncSession, slug: str
-    ) -> GuideReadDTO | None:
+    async def get_guide_by_slug(self, session: AsyncSession, slug: str) -> GuideReadDTO | None:
         """Get a guide by slug."""
         return await self.repo.get_read_by_slug(session, slug)
 
@@ -79,8 +75,6 @@ class GuideService:
         """List guides for a specific category."""
         return await self.repo.list_read_by_category(session, category_id)
 
-    async def get_guide_categories(
-        self, session: AsyncSession, guide_id: str
-    ) -> list:
+    async def get_guide_categories(self, session: AsyncSession, guide_id: str) -> list:
         """Get categories for a specific guide."""
         return await self.repo.get_categories(session, guide_id)
