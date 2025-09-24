@@ -18,14 +18,13 @@ SERVICE_NAME="helpcenter-backend-${ENVIRONMENT}"
 
 echo "Deploying to Cloud Run: ${SERVICE_NAME}"
 
-# Build and push image
-echo "Building and pushing Docker image..."
-gcloud builds submit . --config cloudbuild.yaml --substitutions=_TAG=${GITHUB_SHA:-latest},_PROJECT_ID=${GOOGLE_CLOUD_PROJECT}
+# Note: Docker image is built and pushed by GitHub Actions
+# No need to build here since GitHub Actions handles it
 
 # Deploy to Cloud Run
 echo "Deploying to Cloud Run..."
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/${PROJECT_ID}/helpcenter-backend:latest \
+  --image gcr.io/${PROJECT_ID}/helpcenter-backend:${GITHUB_SHA:-latest} \
   --platform managed \
   --region ${REGION} \
   --allow-unauthenticated \
