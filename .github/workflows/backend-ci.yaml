@@ -118,7 +118,13 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        create_credentials_file: true
+        export_environment_variables: true
+        universe: googleapis.com
+        cleanup_credentials: true
+        access_token_lifetime: 3600s
+        access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+        id_token_include_email: false
 
     - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
@@ -178,7 +184,13 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        create_credentials_file: true
+        export_environment_variables: true
+        universe: googleapis.com
+        cleanup_credentials: true
+        access_token_lifetime: 3600s
+        access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+        id_token_include_email: false
 
     - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
@@ -209,7 +221,13 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        create_credentials_file: true
+        export_environment_variables: true
+        universe: googleapis.com
+        cleanup_credentials: true
+        access_token_lifetime: 3600s
+        access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+        id_token_include_email: false
 
     - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
