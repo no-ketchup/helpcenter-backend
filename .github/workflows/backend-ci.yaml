@@ -110,6 +110,7 @@ jobs:
     needs: [test, security-scan]
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    environment: prod
     permissions:
       contents: read
       id-token: write
@@ -122,6 +123,8 @@ jobs:
       run: |
         echo "GCP_SA_KEY available: ${{ secrets.GCP_SA_KEY != '' }}"
         echo "GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}"
+        echo "Environment: ${{ github.ref_name }}"
+        echo "Event: ${{ github.event_name }}"
 
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
