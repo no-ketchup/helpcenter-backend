@@ -27,6 +27,10 @@ COPY . .
 COPY scripts/init-db.sh /usr/local/bin/init-db.sh
 RUN chmod +x /usr/local/bin/init-db.sh
 
+# Copy startup script
+COPY scripts/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
 
@@ -36,10 +40,6 @@ USER app
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
-
-# Copy startup script
-COPY scripts/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
 
 # Run the application
 CMD ["/app/start.sh"]
