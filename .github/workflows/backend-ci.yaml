@@ -94,12 +94,17 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@v0.51.4
       with:
         scan-type: 'fs'
         scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
+        skip-dirs: |
+          node_modules
+          .git
+          __pycache__
+          .pytest_cache
 
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v3
