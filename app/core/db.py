@@ -48,10 +48,11 @@ def _new_engine():
     # Handle asyncpg + Neon DB SSL parameters
     if url.drivername.startswith("postgresql+asyncpg"):
         url_str = str(url)
-        # Remove problematic SSL parameters that asyncpg doesn't support
+        # Handle Neon DB SSL requirements for asyncpg
         if "sslmode=require" in url_str or "channel_binding=require" in url_str:
-            # Create SSL context for secure connections
             ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
             connect_args["ssl"] = ssl_context
             # Remove SSL parameters from URL to avoid conflicts
             url_str = url_str.replace("?sslmode=require", "").replace("&sslmode=require", "")
