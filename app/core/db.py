@@ -5,9 +5,11 @@ Handles async SQLAlchemy engine creation with appropriate connection pooling
 for different environments (test, development, production).
 """
 
+import ssl
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -40,7 +42,19 @@ def _new_engine():
             }
         )
 
-    return create_async_engine(settings.DATABASE_URL, **kwargs)
+    url = make_url(settings.DATABASE_URL)
+    connect_args = {}
+
+    # Handle asyncpg + sslmode=require
+    if url.drivername.startswith("postgresql+asyncpg"):
+        sslmode = url.query.pop("sslmode", None)  # strip sslmode from query
+        if sslmode == "require":
+            ssl_context = ssl.create_default_context()
+            connect_args["ssl"] = ssl_context
+        # rebuild URL without sslmode
+        url = url._replace(query=url.query)
+
+    return create_async_engine(url, connect_args=connect_args, **kwargs)
 
 
 def get_engine():
