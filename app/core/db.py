@@ -55,7 +55,9 @@ def _new_engine():
             connect_args["ssl"] = ssl_context
             # Remove SSL parameters from URL to avoid conflicts
             url_str = url_str.replace("?sslmode=require", "").replace("&sslmode=require", "")
-            url_str = url_str.replace("?channel_binding=require", "").replace("&channel_binding=require", "")
+            url_str = url_str.replace("?channel_binding=require", "").replace(
+                "&channel_binding=require", ""
+            )
             url_str = url_str.replace("?&", "?").replace("&&", "&")
             if url_str.endswith("?") or url_str.endswith("&"):
                 url_str = url_str[:-1]
