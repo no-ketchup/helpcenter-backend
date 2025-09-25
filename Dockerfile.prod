@@ -52,14 +52,15 @@ if [ "$${INIT_DB:-false}" = "true" ]; then\n\
   /usr/local/bin/init-db.sh\n\
 fi\n\
 \n\
-# Simple startup with minimal dependencies\n\
-echo "=== SIMPLE STARTUP ==="\n\
-echo "Environment: $${ENVIRONMENT}"\n\
-echo "Port: $${PORT:-8000}"\n\
-echo "Starting simple test server..."\n\
+# Run migrations\n\
+echo "Running database migrations..."\n\
+python3 scripts/migrate.py --env production || {\n\
+  echo "Migration failed, but continuing startup..."\n\
+}\n\
 \n\
-# Start a simple HTTP server\n\
-python3 -m http.server $${PORT:-8000}
+# Start the application\n\
+echo "Starting application on port $${PORT:-8000}..."\n\
+exec uvicorn app.main:app --host 0.0.0.0 --port $${PORT:-8000}
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Run the application

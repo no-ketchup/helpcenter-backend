@@ -30,7 +30,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --allow-unauthenticated \
   --service-account=helpcenter-runtime@${PROJECT_ID}.iam.gserviceaccount.com \
   --set-env-vars "ENVIRONMENT=${ENVIRONMENT}" \
-  --set-env-vars "DATABASE_URL_ASYNC=${DATABASE_URL_ASYNC}" \
+  --set-env-vars "DATABASE_URL=${DATABASE_URL_ASYNC}" \
   --set-env-vars "REDIS_URL=${REDIS_URL}" \
   --set-env-vars "SECRET_KEY=${SECRET_KEY}" \
   --set-env-vars "DEV_EDITOR_KEY=${DEV_EDITOR_KEY}" \
