@@ -215,7 +215,6 @@ jobs:
         DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
         GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
         ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
-        HELPCENTER_GCS: ${{ secrets.HELPCENTER_GCS }}
       run: ./scripts/deploy-cloud-run.sh staging
 
   deploy-production:
@@ -247,5 +246,4 @@ jobs:
         DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
         GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
         ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
-        HELPCENTER_GCS: ${{ secrets.HELPCENTER_GCS }}
       run: ./scripts/deploy-cloud-run.sh production

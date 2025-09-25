@@ -36,7 +36,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --set-env-vars "DEV_EDITOR_KEY=${DEV_EDITOR_KEY}" \
   --set-env-vars "GCS_BUCKET_NAME=${GCS_BUCKET_NAME}" \
   --set-env-vars "ALLOWED_ORIGINS=${ALLOWED_ORIGINS}" \
-  --set-secrets="GOOGLE_APPLICATION_CREDENTIALS=${HELPCENTER_GCS}:latest" \
+  --set-secrets="GOOGLE_APPLICATION_CREDENTIALS=helpcenter-gcs-key:latest" \
   --memory 1Gi \
   --cpu 1 \
   --min-instances 0 \
