@@ -1,68 +1,45 @@
+# Production Dockerfile
 FROM python:3.11-slim
 
-# Set working directory
-WORKDIR /app
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
     postgresql-client \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Create app directory
+WORKDIR /app
 
-# Install Python dependencies
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Copy and make init script executable
-COPY init-db.sh /usr/local/bin/init-db.sh
+# Copy database initialization script
+COPY scripts/init-db.sh /usr/local/bin/init-db.sh
 RUN chmod +x /usr/local/bin/init-db.sh
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
-USER app
 
-# Expose port
-EXPOSE 8000
+# Switch to non-root user
+USER app
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-set -euo pipefail\n\
-\n\
-# Wait for database to be ready\n\
-echo "Waiting for database to be ready..."\n\
-until pg_isready -h $${DATABASE_HOST:-db} -p $${DATABASE_PORT:-5432} -U $${DATABASE_USER:-postgres}; do\n\
-  echo "Database is unavailable - sleeping"\n\
-  sleep 2\n\
-done\n\
-\n\
-# Run database initialization if needed\n\
-if [ "$${INIT_DB:-false}" = "true" ]; then\n\
-  echo "Initializing database..."\n\
-  /usr/local/bin/init-db.sh\n\
-fi\n\
-\n\
-# Run migrations\n\
-echo "Running database migrations..."\n\
-python3 scripts/migrate.py --env production || {\n\
-  echo "Migration failed, but continuing startup..."\n\
-}\n\
-\n\
-# Start the application\n\
-echo "Starting application on port $${PORT:-8000}..."\n\
-PORT=$${PORT:-8000}\n\
-exec uvicorn app.main:app --host 0.0.0.0 --port $PORT
-' > /app/start.sh && chmod +x /app/start.sh
+# Copy startup script
+COPY scripts/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 # Run the application
 CMD ["/app/start.sh"]
