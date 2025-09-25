@@ -52,6 +52,45 @@ if [ "$${INIT_DB:-false}" = "true" ]; then\n\
   /usr/local/bin/init-db.sh\n\
 fi\n\
 \n\
+# Debug environment\n\
+echo "=== DEBUG INFO ==="\n\
+echo "Environment: $${ENVIRONMENT}"\n\
+echo "Port: $${PORT:-8000}"\n\
+echo "Database URL (first 50 chars): $${DATABASE_URL_ASYNC:0:50}..."\n\
+echo "Redis URL (first 50 chars): $${REDIS_URL:0:50}..."\n\
+echo "Secret Key set: $${SECRET_KEY:+YES}"\n\
+echo "GCS Bucket: $${GCS_BUCKET_NAME}"\n\
+echo "=================="\n\
+\n\
+# Test database connection\n\
+echo "Testing database connection..."\n\
+python3 -c "\n\
+import os\n\
+import asyncio\n\
+import asyncpg\n\
+\n\
+async def test_db():\n\
+    try:\n\
+        db_url = os.getenv('DATABASE_URL_ASYNC')\n\
+        if not db_url:\n\
+            print('ERROR: DATABASE_URL_ASYNC not set')\n\
+            return False\n\
+        \n\
+        # Convert to asyncpg format\n\
+        if db_url.startswith('postgresql://'):\n\
+            db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://')\n\
+        \n\
+        conn = await asyncpg.connect(db_url)\n\
+        await conn.close()\n\
+        print('Database connection: SUCCESS')\n\
+        return True\n\
+    except Exception as e:\n\
+        print(f'Database connection: FAILED - {e}')\n\
+        return False\n\
+\n\
+asyncio.run(test_db())\n\
+" || echo "Database test failed, but continuing..."\n\
+\n\
 # Run migrations\n\
 echo "Running database migrations..."\n\
 python3 scripts/migrate.py --env production || {\n\
@@ -60,10 +99,6 @@ python3 scripts/migrate.py --env production || {\n\
 \n\
 # Start the application\n\
 echo "Starting application on port $${PORT:-8000}..."\n\
-echo "Environment variables:"\n\
-echo "  ENVIRONMENT: $${ENVIRONMENT}"\n\
-echo "  PORT: $${PORT:-8000}"\n\
-echo "  DATABASE_URL_ASYNC: $${DATABASE_URL_ASYNC:0:50}..."\n\
 exec uvicorn app.main:app --host 0.0.0.0 --port $${PORT:-8000}\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
