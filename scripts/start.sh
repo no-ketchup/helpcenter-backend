@@ -1,28 +1,29 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "=== STARTUP DEBUG ==="
-echo "Environment: ${ENVIRONMENT}"
+echo "=== MINIMAL STARTUP TEST ==="
+echo "Environment: ${ENVIRONMENT:-not_set}"
 echo "Port: ${PORT:-8080}"
 echo "Python version: $(python3 --version)"
 echo "Working directory: $(pwd)"
-echo "Files in /app: $(ls -la /app)"
-echo "====================="
+echo "Files in /app: $(ls -la /app | head -10)"
+echo "============================="
 
-echo "Skipping all health checks - starting application directly..."
-
-if [ "${INIT_DB:-false}" = "true" ]; then
-  echo "Initializing database..."
-  /usr/local/bin/init-db.sh
-fi
-
-echo "Running database migrations..."
-python3 scripts/migrate.py --env production || {
-  echo "Migration failed, but continuing startup..."
-  echo "Migration error details: $?"
+echo "Testing basic Python import..."
+python3 -c "import sys; print('Python path:', sys.path[:3])" || {
+  echo "Python import failed"
+  exit 1
 }
 
-echo "Starting application on port ${PORT:-8080}..."
+echo "Testing FastAPI import..."
+python3 -c "from fastapi import FastAPI; print('FastAPI import: SUCCESS')" || {
+  echo "FastAPI import failed"
+  exit 1
+}
+
+echo "Starting minimal HTTP server on port ${PORT:-8080}..."
 PORT="${PORT:-8080}"
-echo "Starting application on port $PORT"
-exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
+echo "About to start server on port $PORT"
+
+# Start a simple HTTP server instead of the full app
+python3 -m http.server $PORT
