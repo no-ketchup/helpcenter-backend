@@ -38,6 +38,10 @@ try:
     print('Environment:', settings.ENVIRONMENT)
 except Exception as e:
     print('Settings import failed:', e)
+    with open('/tmp/error.log', 'w') as f:
+        f.write(f'Settings import failed: {e}\n')
+        import traceback
+        f.write(traceback.format_exc())
     sys.exit(1)
 
 print('Testing models import...')
@@ -46,6 +50,10 @@ try:
     print('Models import: SUCCESS')
 except Exception as e:
     print('Models import failed:', e)
+    with open('/tmp/error.log', 'w') as f:
+        f.write(f'Models import failed: {e}\n')
+        import traceback
+        f.write(traceback.format_exc())
     sys.exit(1)
 
 print('Testing main app import...')
@@ -55,11 +63,15 @@ try:
     print('App title:', app.title)
 except Exception as e:
     print('FastAPI app import failed:', e)
-    import traceback
-    traceback.print_exc()
+    with open('/tmp/error.log', 'w') as f:
+        f.write(f'FastAPI app import failed: {e}\n')
+        import traceback
+        f.write(traceback.format_exc())
     sys.exit(1)
 " || {
   echo "FastAPI app import failed"
+  echo "Error details:"
+  cat /tmp/error.log 2>/dev/null || echo "No error log found"
   exit 1
 }
 
