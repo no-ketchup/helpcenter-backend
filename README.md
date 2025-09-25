@@ -300,6 +300,9 @@ Configure these secrets in your GitHub repository settings:
 | `DEV_EDITOR_KEY` | Editor authentication key | Yes |
 | `GCS_BUCKET_NAME` | Google Cloud Storage bucket name | Yes |
 | `ALLOWED_ORIGINS` | CORS allowed origins | Yes |
+| `POSTGRES_USER` | Database username for CI tests | Yes |
+| `POSTGRES_PASSWORD` | Database password for CI tests | Yes |
+| `POSTGRES_DB` | Database name for CI tests | Yes |
 
 ## Free Tier Limits
 
