@@ -28,25 +28,36 @@ def run_migration(environment: str = "development", database_url: str = None):
     project_root = Path(__file__).parent.parent
     os.environ["PYTHONPATH"] = str(project_root)
     
-    # Run alembic migration
+    # Run alembic migration with better error handling for cloud
     try:
+        print(f"Running migrations for {environment}...")
+        print(f"Database URL: {sync_url[:50]}...")
+        
         result = subprocess.run([
             "alembic", 
             "-c", "alembic.ini", 
             "upgrade", "head"
-        ], cwd=project_root, check=True, capture_output=True, text=True)
+        ], cwd=project_root, check=False, capture_output=True, text=True, timeout=60)
         
-        print(f"Migrations completed successfully for {environment}")
-        if result.stdout:
-            print(result.stdout)
-        return True
+        if result.returncode == 0:
+            print(f"Migrations completed successfully for {environment}")
+            if result.stdout:
+                print(result.stdout)
+            return True
+        else:
+            print(f"Migration failed for {environment} (exit code: {result.returncode})")
+            print(f"STDOUT: {result.stdout}")
+            print(f"STDERR: {result.stderr}")
+            return False
         
-    except subprocess.CalledProcessError as e:
-        print(f"Migration failed for {environment}")
-        print(f"Error: {e.stderr}")
+    except subprocess.TimeoutExpired:
+        print(f"Migration timed out for {environment}")
         return False
     except FileNotFoundError:
         print("Alembic not found. Make sure it's installed.")
+        return False
+    except Exception as e:
+        print(f"Migration error for {environment}: {e}")
         return False
 
 def main():
