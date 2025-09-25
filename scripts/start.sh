@@ -21,9 +21,14 @@ python3 -c "from fastapi import FastAPI; print('FastAPI import: SUCCESS')" || {
   exit 1
 }
 
-echo "Starting minimal HTTP server on port ${PORT:-8080}..."
-PORT="${PORT:-8080}"
-echo "About to start server on port $PORT"
+echo "Running database migrations..."
+python3 scripts/migrate.py --env production || {
+  echo "Migration failed, but continuing startup..."
+}
 
-# Start a simple HTTP server instead of the full app
-python3 -m http.server $PORT
+echo "Starting FastAPI application on port ${PORT:-8080}..."
+PORT="${PORT:-8080}"
+echo "About to start FastAPI on port $PORT"
+
+# Start the FastAPI application
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
