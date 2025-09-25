@@ -58,35 +58,8 @@ echo "Environment: $${ENVIRONMENT}"\n\
 echo "Port: $${PORT:-8000}"\n\
 echo "Starting simple test server..."\n\
 \n\
-# Create a simple test server script\n\
-cat > /app/test_server.py << 'EOF'\n\
-import http.server\n\
-import socketserver\n\
-import os\n\
-\n\
-port = int(os.getenv('PORT', 8000))\n\
-print(f'Starting test server on port {port}')\n\
-\n\
-class TestHandler(http.server.SimpleHTTPRequestHandler):\n\
-    def do_GET(self):\n\
-        if self.path == '/health':\n\
-            self.send_response(200)\n\
-            self.send_header('Content-type', 'application/json')\n\
-            self.end_headers()\n\
-            self.wfile.write(b'{\"status\": \"ok\", \"port\": ' + str(port).encode() + b'}')\n\
-        else:\n\
-            self.send_response(200)\n\
-            self.send_header('Content-type', 'text/plain')\n\
-            self.end_headers()\n\
-            self.wfile.write(b'Test server running on port ' + str(port).encode())\n\
-\n\
-with socketserver.TCPServer(('', port), TestHandler) as httpd:\n\
-    print(f'Server running on port {port}')\n\
-    httpd.serve_forever()\n\
-EOF\n\
-\n\
-# Run the test server\n\
-python3 /app/test_server.py
+# Start a simple HTTP server\n\
+python3 -m http.server $${PORT:-8000}
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Run the application
