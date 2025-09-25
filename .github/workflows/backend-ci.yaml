@@ -167,7 +167,7 @@ jobs:
     - name: Test Docker image
       run: |
         # Test that the Docker image can start (basic container test)
-        docker run --rm -d --name test-container -p 8000:8000 \
+        docker run --rm -d --name test-container -p 8000:8080 \
           -e ENVIRONMENT=test \
           -e DATABASE_URL_ASYNC=postgresql+asyncpg://test:test@localhost:5432/test_db \
           -e REDIS_URL=redis://localhost:6379 \
@@ -180,6 +180,12 @@ jobs:
         # Check if container is still running (basic health check)
         if docker ps | grep -q test-container; then
           echo "Container started successfully"
+          # Test health endpoint
+          curl -f http://localhost:8000/health || {
+            echo "Health check failed"
+            docker logs test-container
+            exit 1
+          }
           docker stop test-container
         else
           echo "Container failed to start"

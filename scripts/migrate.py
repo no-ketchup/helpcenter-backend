@@ -23,6 +23,9 @@ def run_migration(environment: str = "development", database_url: str = None):
             # Already in sync format (like Neon DB)
             sync_url = database_url
         os.environ["DATABASE_URL"] = sync_url
+    else:
+        # If no database_url provided, use environment variable
+        sync_url = os.environ.get("DATABASE_URL", "postgresql://localhost:5432/test")
     
     # Ensure PYTHONPATH is set
     project_root = Path(__file__).parent.parent

@@ -31,8 +31,10 @@ TEST_DATABASE_URL_ASYNC = os.getenv("TEST_DATABASE_URL_ASYNC")
 
 if ENVIRONMENT == "test":
     if not TEST_DATABASE_URL_ASYNC:
-        raise ValueError("TEST_DATABASE_URL_ASYNC must be set for testing")
-    DATABASE_URL = TEST_DATABASE_URL_ASYNC
+        # Use a default test database URL if not provided
+        DATABASE_URL = "postgresql+asyncpg://test:test@localhost:5432/test_db"
+    else:
+        DATABASE_URL = TEST_DATABASE_URL_ASYNC
 elif not DATABASE_URL_ASYNC:
     raise ValueError("DATABASE_URL_ASYNC must be set")
 else:
