@@ -58,8 +58,8 @@ echo "Environment: $${ENVIRONMENT}"\n\
 echo "Port: $${PORT:-8000}"\n\
 echo "Starting simple test server..."\n\
 \n\
-# Start a simple HTTP server to test port binding\n\
-python3 -c "\n\
+# Create a simple test server script\n\
+cat > /app/test_server.py << 'EOF'\n\
 import http.server\n\
 import socketserver\n\
 import os\n\
@@ -83,7 +83,10 @@ class TestHandler(http.server.SimpleHTTPRequestHandler):\n\
 with socketserver.TCPServer(('', port), TestHandler) as httpd:\n\
     print(f'Server running on port {port}')\n\
     httpd.serve_forever()\n\
-"
+EOF\n\
+\n\
+# Run the test server\n\
+python3 /app/test_server.py
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Run the application
