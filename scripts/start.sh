@@ -84,6 +84,7 @@ python3 scripts/migrate.py --env production || {
   echo "Migration failed, but continuing startup..."
 }
 
-echo "Starting application on port ${PORT:-8000}..."
-PORT=${PORT:-8000}
-exec uvicorn app.main:app --host 0.0.0.0 --port $PORT
+echo "Starting application on port ${PORT:-8080}..."
+PORT="${PORT:-8080}"
+echo "Starting application on port $PORT"
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"

@@ -36,17 +36,17 @@ def run_migration(environment: str = "development", database_url: str = None):
             "upgrade", "head"
         ], cwd=project_root, check=True, capture_output=True, text=True)
         
-        print(f"✅ Migrations completed successfully for {environment}")
+        print(f"Migrations completed successfully for {environment}")
         if result.stdout:
             print(result.stdout)
         return True
         
     except subprocess.CalledProcessError as e:
-        print(f"❌ Migration failed for {environment}")
+        print(f"Migration failed for {environment}")
         print(f"Error: {e.stderr}")
         return False
     except FileNotFoundError:
-        print("❌ Alembic not found. Make sure it's installed.")
+        print("Alembic not found. Make sure it's installed.")
         return False
 
 def main():
