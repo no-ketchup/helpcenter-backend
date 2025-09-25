@@ -21,9 +21,19 @@ python3 -c "from fastapi import FastAPI; print('FastAPI import: SUCCESS')" || {
   exit 1
 }
 
-echo "Running database migrations..."
+echo "Testing migration script..."
 python3 scripts/migrate.py --env production || {
   echo "Migration failed, but continuing startup..."
+}
+
+echo "Testing FastAPI app import..."
+python3 -c "
+from app.main import app
+print('FastAPI app import: SUCCESS')
+print('App title:', app.title)
+" || {
+  echo "FastAPI app import failed"
+  exit 1
 }
 
 echo "Starting FastAPI application on port ${PORT:-8080}..."
