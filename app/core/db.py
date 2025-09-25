@@ -47,12 +47,12 @@ def _new_engine():
 
     # Handle asyncpg + sslmode=require
     if url.drivername.startswith("postgresql+asyncpg"):
-        sslmode = url.query.pop("sslmode", None)  # strip sslmode from query
-        if sslmode == "require":
+        if "sslmode=require" in str(url):
             ssl_context = ssl.create_default_context()
             connect_args["ssl"] = ssl_context
-        # rebuild URL without sslmode
-        url = url._replace(query=url.query)
+            # Remove sslmode from URL to avoid conflicts
+            url_str = str(url).replace("?sslmode=require", "").replace("&sslmode=require", "")
+            url = make_url(url_str)
 
     return create_async_engine(url, connect_args=connect_args, **kwargs)
 
