@@ -121,7 +121,7 @@ jobs:
 
     - name: Debug secrets
       run: |
-        echo "GCP_SA_KEY available: ${{ secrets.GCP_SA_KEY != '' }}"
+        echo "HELPCENTER_CICD available: ${{ secrets.HELPCENTER_CICD != '' }}"
         echo "GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}"
         echo "Environment: ${{ github.ref_name }}"
         echo "Event: ${{ github.event_name }}"
@@ -129,7 +129,7 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        credentials_json: ${{ secrets.HELPCENTER_CICD }}
 
     - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
@@ -189,7 +189,7 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        credentials_json: ${{ secrets.HELPCENTER_CICD }}
 
     - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
@@ -204,7 +204,7 @@ jobs:
         DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
         GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
         ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
-        GOOGLE_APPLICATION_CREDENTIALS_SECRET: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_SECRET }}
+        HELPCENTER_GCS: ${{ secrets.HELPCENTER_GCS }}
       run: ./scripts/deploy-cloud-run.sh staging
 
   deploy-production:
@@ -220,7 +220,7 @@ jobs:
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        credentials_json: ${{ secrets.HELPCENTER_CICD }}
 
     - name: Set up Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
@@ -236,5 +236,5 @@ jobs:
         DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
         GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
         ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
-        GOOGLE_APPLICATION_CREDENTIALS_SECRET: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_SECRET }}
+        HELPCENTER_GCS: ${{ secrets.HELPCENTER_GCS }}
       run: ./scripts/deploy-cloud-run.sh production

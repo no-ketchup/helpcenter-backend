@@ -68,7 +68,7 @@ The `env.example` file contains all required environment variables with placehol
 
 - **Database**: Set your Neon DB connection details
 - **Redis**: For rate limiting (use `redis://redis:6379` for local development)
-- **Google Cloud**: Set your GCS bucket and service account
+- **Google Cloud**: Set your GCS bucket and service accounts
 - **Security**: Generate strong secret keys
 - **CORS**: Add your frontend domains
 
@@ -266,12 +266,40 @@ The CI/CD pipeline uses hardcoded test values for testing and injects real secre
 | `DATABASE_URL_ASYNC` | Neon DB async connection string | Yes |
 | `REDIS_URL` | Redis connection string | Yes |
 | `GCS_BUCKET_NAME` | Google Cloud Storage bucket | Yes |
-| `GOOGLE_APPLICATION_CREDENTIALS` | GCS service account key | Yes |
+| `HELPCENTER_GCS` | Secret name containing GCS service account key | Yes |
 | `SECRET_KEY` | Application secret key | Yes |
 | `DEV_EDITOR_KEY` | Editor authentication key | Yes |
 | `ALLOWED_ORIGINS` | CORS allowed origins | Yes |
 | `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | No |
 | `ENVIRONMENT` | Environment (development, staging, production) | No |
+
+### Google Cloud Service Accounts
+
+The deployment uses three service accounts for security:
+
+| Service Account | Purpose | Required Roles |
+|---|---|---|
+| `helpcenter-cicd` | GitHub Actions CI/CD | Cloud Build Editor, Storage Admin, Cloud Run Admin, Secret Manager Secret Accessor, Service Account User |
+| `helpcenter-runtime` | Cloud Run runtime | Secret Manager Secret Accessor |
+| `helpcenter-gcs` | GCS operations | Storage Object Admin |
+
+### GitHub Secrets
+
+Configure these secrets in your GitHub repository settings:
+
+| Secret Name | Description | Required |
+|---|---|---|
+| `HELPCENTER_CICD` | Full JSON key for `helpcenter-cicd` service account | Yes |
+| `HELPCENTER_RUNTIME` | Full JSON key for `helpcenter-runtime` service account | Yes |
+| `HELPCENTER_GCS` | Full JSON key for `helpcenter-gcs` service account | Yes |
+| `GOOGLE_CLOUD_PROJECT` | Your GCP project ID | Yes |
+| `GOOGLE_CLOUD_REGION` | Your GCP region (e.g., us-central1) | Yes |
+| `DATABASE_URL` | Neon DB connection string | Yes |
+| `REDIS_URL` | Redis connection string | Yes |
+| `SECRET_KEY` | Application secret key | Yes |
+| `DEV_EDITOR_KEY` | Editor authentication key | Yes |
+| `GCS_BUCKET_NAME` | Google Cloud Storage bucket name | Yes |
+| `ALLOWED_ORIGINS` | CORS allowed origins | Yes |
 
 ## Free Tier Limits
 

@@ -89,7 +89,7 @@ help: ## Show this help
 	@echo ""
 	@echo "Environment variables (set via .env.local for dev, CI secrets for prod):"
 	@echo "  DATABASE_URL_ASYNC, TEST_DATABASE_URL_ASYNC, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB"
-	@echo "  REDIS_URL, SECRET_KEY, DEV_EDITOR_KEY, GCS_BUCKET_NAME, GOOGLE_APPLICATION_CREDENTIALS, ALLOWED_ORIGINS"
+	@echo "  REDIS_URL, SECRET_KEY, DEV_EDITOR_KEY, GCS_BUCKET_NAME, HELPCENTER_GCS, ALLOWED_ORIGINS"
 	@echo ""
 	@echo "Available targets:"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -190,7 +190,7 @@ db-list: check-prod-safe ## List databases (NOT ALLOWED IN PRODUCTION)
 
 prod-up: ## Start production services (requires env vars to be set)
 	@echo "Starting production services..."
-	@echo "Make sure to set: DATABASE_URL_ASYNC, REDIS_URL, SECRET_KEY, DEV_EDITOR_KEY, GCS_BUCKET_NAME, GOOGLE_APPLICATION_CREDENTIALS, ALLOWED_ORIGINS"
+	@echo "Make sure to set: DATABASE_URL_ASYNC, REDIS_URL, SECRET_KEY, DEV_EDITOR_KEY, GCS_BUCKET_NAME, HELPCENTER_GCS, ALLOWED_ORIGINS"
 	ENVIRONMENT=production docker compose up -d db redis
 	sleep 5
 	ENVIRONMENT=production docker compose up backend
