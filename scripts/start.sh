@@ -21,7 +21,11 @@ python3 -c "from fastapi import FastAPI; print('FastAPI import: SUCCESS')" || {
   exit 1
 }
 
-echo "Skipping migrations and FastAPI for now..."
+echo "Testing migration script..."
+python3 scripts/migrate.py --env production || {
+  echo "Migration failed, but continuing startup..."
+}
+
 echo "Starting simple HTTP server on port ${PORT:-8080}..."
 PORT="${PORT:-8080}"
 echo "About to start HTTP server on port $PORT"
