@@ -26,13 +26,33 @@ python3 scripts/migrate.py --env production || {
   echo "Migration failed, but continuing startup..."
 }
 
-echo "Testing FastAPI app import..."
+echo "Testing basic app imports..."
 python3 -c "
-from app.main import app
-print('FastAPI app import: SUCCESS')
-print('App title:', app.title)
+import sys
+print('Python path:', sys.path[:3])
+try:
+    from app.core import settings
+    print('Settings import: SUCCESS')
+except Exception as e:
+    print('Settings import failed:', e)
+    sys.exit(1)
+
+try:
+    from app.domain import models
+    print('Models import: SUCCESS')
+except Exception as e:
+    print('Models import failed:', e)
+    sys.exit(1)
+
+try:
+    from app.main import app
+    print('FastAPI app import: SUCCESS')
+    print('App title:', app.title)
+except Exception as e:
+    print('FastAPI app import failed:', e)
+    sys.exit(1)
 " || {
-  echo "FastAPI app import failed"
+  echo "App import failed"
   exit 1
 }
 
