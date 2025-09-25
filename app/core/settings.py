@@ -36,7 +36,11 @@ if ENVIRONMENT == "test":
 elif not DATABASE_URL_ASYNC:
     raise ValueError("DATABASE_URL_ASYNC must be set")
 else:
-    DATABASE_URL = DATABASE_URL_ASYNC
+    # Convert sync URL to async format if needed
+    if DATABASE_URL_ASYNC.startswith("postgresql://"):
+        DATABASE_URL = DATABASE_URL_ASYNC.replace("postgresql://", "postgresql+asyncpg://")
+    else:
+        DATABASE_URL = DATABASE_URL_ASYNC
 
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL must be set")
