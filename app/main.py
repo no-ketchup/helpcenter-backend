@@ -5,7 +5,6 @@ A production-ready help center backend with GraphQL and REST APIs.
 """
 
 import os
-import tempfile
 from contextlib import asynccontextmanager
 
 import strawberry
@@ -31,12 +30,7 @@ from app.domain.rest import dev_editor_router, guide_editor_router, media_editor
 
 setup_logging(LOG_LEVEL)
 
-# Handle GOOGLE_APPLICATION_CREDENTIALS_JSON if present
-if creds_json := os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON"):
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
-    tmp.write(creds_json.encode("utf-8"))
-    tmp.flush()
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+# Google Cloud authentication handled by service account
 
 
 @asynccontextmanager

@@ -58,7 +58,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 DEV_EDITOR_KEY = os.getenv("DEV_EDITOR_KEY", "dev-editor-key")
 
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
-GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+# GOOGLE_APPLICATION_CREDENTIALS not needed - using service account authentication
 
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 

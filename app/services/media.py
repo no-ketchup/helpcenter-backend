@@ -8,7 +8,7 @@ from google.cloud import storage
 from sqlalchemy import select as sa_select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.core.settings import GCS_BUCKET_NAME, GOOGLE_APPLICATION_CREDENTIALS
+from app.core.settings import GCS_BUCKET_NAME
 from app.domain.dtos.media import MediaCreateDTO, MediaReadDTO
 from app.domain.models import Media as MediaModel
 from app.repositories.media import MediaRepository
@@ -20,10 +20,14 @@ class MediaService:
 
         # Configure Google Cloud Storage
         self.gcs_client = None
-        if GCS_BUCKET_NAME and GOOGLE_APPLICATION_CREDENTIALS:
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_APPLICATION_CREDENTIALS
-            self.gcs_client = storage.Client()
-            self.bucket_name = GCS_BUCKET_NAME
+        if GCS_BUCKET_NAME:
+            try:
+                # Try to initialize GCS client - will use service account if available
+                self.gcs_client = storage.Client()
+                self.bucket_name = GCS_BUCKET_NAME
+            except Exception as e:
+                print(f"Warning: Failed to initialize GCS client: {e}")
+                self.gcs_client = None
 
     async def upload_media(
         self, session: AsyncSession, file: UploadFile, alt: str = None, guide_id: str = None
