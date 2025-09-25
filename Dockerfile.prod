@@ -54,10 +54,16 @@ fi\n\
 \n\
 # Run migrations\n\
 echo "Running database migrations..."\n\
-python3 scripts/migrate.py --env production\n\
+python3 scripts/migrate.py --env production || {\n\
+  echo "Migration failed, but continuing startup..."\n\
+}\n\
 \n\
 # Start the application\n\
-echo "Starting application..."\n\
+echo "Starting application on port $${PORT:-8000}..."\n\
+echo "Environment variables:"\n\
+echo "  ENVIRONMENT: $${ENVIRONMENT}"\n\
+echo "  PORT: $${PORT:-8000}"\n\
+echo "  DATABASE_URL_ASYNC: $${DATABASE_URL_ASYNC:0:50}..."\n\
 exec uvicorn app.main:app --host 0.0.0.0 --port $${PORT:-8000}\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 

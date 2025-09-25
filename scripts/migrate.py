@@ -15,7 +15,14 @@ def run_migration(environment: str = "development", database_url: str = None):
     # Set environment variables
     os.environ["ENVIRONMENT"] = environment
     if database_url:
-        os.environ["DATABASE_URL"] = database_url
+        os.environ["DATABASE_URL_ASYNC"] = database_url
+        # Convert async URL to sync URL for Alembic if needed
+        if database_url.startswith("postgresql+asyncpg://"):
+            sync_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
+        else:
+            # Already in sync format (like Neon DB)
+            sync_url = database_url
+        os.environ["DATABASE_URL"] = sync_url
     
     # Ensure PYTHONPATH is set
     project_root = Path(__file__).parent.parent
