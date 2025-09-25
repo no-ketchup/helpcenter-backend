@@ -26,6 +26,16 @@ python3 scripts/migrate.py --env production || {
   echo "Migration failed, but continuing startup..."
 }
 
+echo "Testing FastAPI app import..."
+python3 -c "
+from app.main import app
+print('FastAPI app import: SUCCESS')
+print('App title:', app.title)
+" || {
+  echo "FastAPI app import failed"
+  exit 1
+}
+
 echo "Starting simple HTTP server on port ${PORT:-8080}..."
 PORT="${PORT:-8080}"
 echo "About to start HTTP server on port $PORT"
