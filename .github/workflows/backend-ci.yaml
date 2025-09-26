@@ -215,7 +215,7 @@ jobs:
       env:
         GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
         GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
-        DATABASE_URL_ASYNC: ${{ secrets.DATABASE_URL }}
+        DATABASE_URL_ASYNC: ${{ secrets.DATABASE_URL_ASYNC }}
         REDIS_URL: ${{ secrets.REDIS_URL }}
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
@@ -246,7 +246,7 @@ jobs:
         GITHUB_SHA: ${{ github.sha }}
         GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
         GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
-        DATABASE_URL_ASYNC: ${{ secrets.DATABASE_URL }}
+        DATABASE_URL_ASYNC: ${{ secrets.DATABASE_URL_ASYNC }}
         REDIS_URL: ${{ secrets.REDIS_URL }}
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}

@@ -18,6 +18,13 @@ SERVICE_NAME="helpcenter-backend-${ENVIRONMENT}"
 
 echo "Deploying to Cloud Run: ${SERVICE_NAME}"
 
+# Debug: Show environment variables (without exposing sensitive data)
+echo "Environment variables:"
+echo "ENVIRONMENT: ${ENVIRONMENT}"
+echo "DATABASE_URL_ASYNC: ${DATABASE_URL_ASYNC:0:20}..." # Show first 20 chars only
+echo "REDIS_URL: ${REDIS_URL:0:20}..."
+echo "GCS_BUCKET_NAME: ${GCS_BUCKET_NAME}"
+
 # Note: Docker image is built and pushed by GitHub Actions
 # No need to build here since GitHub Actions handles it
 
