@@ -1,0 +1,233 @@
+name: Separated Services CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  test-common:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install common package dependencies
+      run: |
+        cd helpcenter-common
+        pip install -r requirements.txt
+
+    - name: Run common package tests
+      run: |
+        cd helpcenter-common
+        python -m pytest tests/ -v
+
+  test-graphql-api:
+    runs-on: ubuntu-latest
+    needs: test-common
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd helpcenter-graphql-api
+        pip install -r requirements.txt
+
+    - name: Run GraphQL API tests
+      run: |
+        cd helpcenter-graphql-api
+        python -m pytest tests/ -v
+
+  test-editor-api:
+    runs-on: ubuntu-latest
+    needs: test-common
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd helpcenter-editor-api
+        pip install -r requirements.txt
+
+    - name: Run Editor API tests
+      run: |
+        cd helpcenter-editor-api
+        python -m pytest tests/ -v
+
+  build-graphql-api:
+    needs: [test-graphql-api]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.HELPCENTER_CICD }}
+
+    - name: Set up Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build GraphQL API Docker image
+      run: |
+        cd helpcenter-graphql-api
+        docker build -t helpcenter-graphql-api:latest .
+        docker tag helpcenter-graphql-api:latest gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-graphql-api:${{ github.sha }}
+        docker tag helpcenter-graphql-api:latest gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-graphql-api:latest
+
+    - name: Push GraphQL API Docker image
+      run: |
+        gcloud auth configure-docker gcr.io --quiet
+        docker push gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-graphql-api:${{ github.sha }}
+        docker push gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-graphql-api:latest
+
+  build-editor-api:
+    needs: [test-editor-api]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.HELPCENTER_CICD }}
+
+    - name: Set up Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Editor API Docker image
+      run: |
+        cd helpcenter-editor-api
+        docker build -t helpcenter-editor-api:latest .
+        docker tag helpcenter-editor-api:latest gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-editor-api:${{ github.sha }}
+        docker tag helpcenter-editor-api:latest gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-editor-api:latest
+
+    - name: Push Editor API Docker image
+      run: |
+        gcloud auth configure-docker gcr.io --quiet
+        docker push gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-editor-api:${{ github.sha }}
+        docker push gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-editor-api:latest
+
+  deploy-graphql-api:
+    needs: build-graphql-api
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: prod
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.HELPCENTER_CICD }}
+
+    - name: Set up Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Deploy GraphQL API to Cloud Run
+      env:
+        GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+        GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
+        DATABASE_URL_ASYNC: ${{ secrets.DATABASE_URL_ASYNC }}
+        REDIS_URL: ${{ secrets.REDIS_URL }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+        ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+      run: |
+        gcloud run deploy helpcenter-graphql-api \
+          --image gcr.io/${{ secrets.GOOGLE_CLOUD_PROJECT }}/helpcenter-graphql-api:${{ github.sha }} \
+          --platform managed \
+          --region ${{ secrets.GOOGLE_CLOUD_REGION }} \
+          --allow-unauthenticated \
+          --service-account=helpcenter-runtime@${{ secrets.GOOGLE_CLOUD_PROJECT }}.iam.gserviceaccount.com \
+          --set-env-vars "ENVIRONMENT=production" \
+          --set-env-vars "DATABASE_URL_ASYNC=${{ secrets.DATABASE_URL_ASYNC }}" \
+          --set-env-vars "REDIS_URL=${{ secrets.REDIS_URL }}" \
+          --set-env-vars "SECRET_KEY=${{ secrets.SECRET_KEY }}" \
+          --set-env-vars "GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}" \
+          --set-env-vars "ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}" \
+          --memory 1Gi \
+          --cpu 1 \
+          --min-instances 0 \
+          --max-instances 10 \
+          --timeout 300 \
+          --concurrency 100
+
+  deploy-editor-api:
+    needs: build-editor-api
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: prod
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.HELPCENTER_CICD }}
+
+    - name: Set up Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Deploy Editor API to Cloud Function
+      env:
+        GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+        GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
+        DATABASE_URL_ASYNC: ${{ secrets.DATABASE_URL_ASYNC }}
+        REDIS_URL: ${{ secrets.REDIS_URL }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
+        GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+        ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+      run: |
+        cd helpcenter-editor-api
+        ./deploy-cloud-function.sh production

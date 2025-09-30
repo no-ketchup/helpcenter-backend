@@ -15,17 +15,17 @@ from pydantic import ValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 from strawberry.fastapi import GraphQLRouter
 
-from app.core.db import get_session
-from app.core.logging import get_correlation_id, get_logger, setup_logging
-from app.core.middleware import RequestLoggingMiddleware
-from app.core.rate_limiting import (
+from helpcenter_common.core.db import get_session
+from helpcenter_common.core.logging import get_correlation_id, get_logger, setup_logging
+from helpcenter_common.core.middleware import RequestLoggingMiddleware
+from helpcenter_common.core.rate_limiting import (
     limiter,
     setup_rate_limiting,
 )
-from app.core.settings import ALLOWED_ORIGINS, ENVIRONMENT, LOG_LEVEL
-from app.core.validation import create_error_response, handle_validation_error
+from helpcenter_common.core.settings import ALLOWED_ORIGINS, ENVIRONMENT, LOG_LEVEL
+from helpcenter_common.core.validation import create_error_response, handle_validation_error
 from app.domain.resolvers import Mutation, Query
-from app.domain.rest import dev_editor_router, guide_editor_router, media_editor_router
+# REST API moved to separate editor service
 
 setup_logging(LOG_LEVEL)
 
@@ -160,10 +160,7 @@ async def graphql_options(request: Request):
 
 app.include_router(graphql_app, prefix="/graphql")
 
-
-app.include_router(dev_editor_router)
-app.include_router(guide_editor_router)
-app.include_router(media_editor_router)
+# REST API endpoints moved to separate editor service
 
 
 @app.get("/health")
