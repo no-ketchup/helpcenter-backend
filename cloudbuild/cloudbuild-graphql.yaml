@@ -4,7 +4,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-f', 'graphql_api/Dockerfile',
+      '-f', 'Dockerfile.uv',
       '-t', 'gcr.io/$PROJECT_ID/helpcenter-graphql-api:${_GITHUB_SHA}',
       '-t', 'gcr.io/$PROJECT_ID/helpcenter-graphql-api:latest',
       '--build-arg', 'ENVIRONMENT=${_ENVIRONMENT}',
@@ -34,6 +34,7 @@ steps:
       '--set-env-vars', 'SECRET_KEY=${_SECRET_KEY}',
       '--set-env-vars', 'DEV_EDITOR_KEY=${_DEV_EDITOR_KEY}',
       '--set-env-vars', 'GCS_BUCKET_NAME=${_GCS_BUCKET_NAME}',
+      '--set-env-vars', 'HELPCENTER_GCS=${_HELPCENTER_GCS}',
       '--set-env-vars', 'ALLOWED_ORIGINS=${_ALLOWED_ORIGINS}',
       '--memory', '1Gi',
       '--cpu', '1',
@@ -53,6 +54,7 @@ substitutions:
   _SECRET_KEY: ''
   _DEV_EDITOR_KEY: ''
   _GCS_BUCKET_NAME: ''
+  _HELPCENTER_GCS: ''
   _ALLOWED_ORIGINS: ''
 
 # Options

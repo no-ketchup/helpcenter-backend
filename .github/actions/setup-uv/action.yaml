@@ -24,3 +24,4 @@ runs:
     - name: Install dependencies
       shell: bash
       run: uv sync --frozen
+      continue-on-error: false

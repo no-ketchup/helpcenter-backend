@@ -14,12 +14,15 @@ dependencies = [
     "pydantic>=2.0",
     "pydantic-settings",
     "asyncpg",
+    "psycopg2-binary",
     "google-cloud-storage==2.10.0",
     "redis==5.0.1",
     "fastapi",
     "slowapi==0.1.9",
     "python-dotenv",
-    "alembic",
+    "strawberry-graphql[fastapi]",
+    "functions-framework",
+    "alembic>=1.16.5",
 ]
 
 [dependency-groups]

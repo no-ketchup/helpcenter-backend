@@ -4,12 +4,12 @@ FROM python:3.11-slim
 # Install uv (small Rust binary, <10 MB)
 RUN pip install --no-cache-dir uv
 
-WORKDIR /app
+WORKDIR /code
 
 # Copy lock + metadata only
 COPY pyproject.toml uv.lock ./
 COPY common/pyproject.toml ./common/
-COPY editor-api/pyproject.toml ./editor-api/
+COPY editor_api/pyproject.toml ./editor_api/
 
 # Install directly from lockfile (deterministic)
 RUN uv sync --frozen --no-dev --no-editable
@@ -18,7 +18,7 @@ RUN uv sync --frozen --no-dev --no-editable
 COPY . .
 
 # Create non-root user
-RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
+RUN useradd --create-home --shell /bin/bash app && chown -R app:app /code
 USER app
 
 # Expose port

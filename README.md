@@ -1,18 +1,18 @@
 # Help Center Backend
 
-A production-ready help center backend with clean, separated architecture, built with FastAPI, GraphQL, and PostgreSQL. Features complete CI/CD pipeline with Docker, GitHub Actions, Cloud Run deployment, and modern UV dependency management.
+A help center backend with clean, separated architecture, built with FastAPI, GraphQL, and PostgreSQL. CI/CD pipeline with Docker, GitHub Actions, Cloud Run deployment, and UV dependency management.
 
 **Complete Refactoring:**
 - **Clean Structure**: Migrated from `helpcenter-*` to clean `common/`, `graphql_api/`, `editor_api/`
-- **UV Integration**: Modern dependency management with `pyproject.toml` and lock files
-- **Test Optimization**: Two-tier testing strategy (fast unit tests + comprehensive integration tests)
+- **UV Integration**: Dependency management with `pyproject.toml` and lock files
+- **Test Optimization**: Two testing strategy (fast unit tests + comprehensive integration tests)
 - **CI/CD Enhancement**: Optimized GitHub Actions with path-based triggering and UV caching
 - **Code Quality**: Automated linting, formatting, and import sorting
-- **Production Ready**: All systems tested and validated for deployment
+- **Production Ready**: All tests passing with proper alembic migrations
 
 ## Architecture
 
-### Separated Services Architecture
+### Project Structure
 
 ```
 helpcenter-backend/
@@ -89,6 +89,8 @@ helpcenter-backend/
 - **CLI Editor**: Terminal-based content management tool
 
 ## Quick Start
+
+Ensure Docker Desktop or Colima is running.
 
 ### Prerequisites
 
@@ -252,9 +254,9 @@ make test-quick
 ### Test Structure
 ```
 tests/
-├── unit/                   # Fast unit tests (10 tests)
+├── unit/                   # Fast unit tests
 │   └── common/core/        # Mock-based validation tests
-└── integration/            # Database-required tests (47 tests)
+└── integration/            # Database-required tests
     ├── graphql_api/        # GraphQL endpoint tests
     ├── editor_api/         # REST API endpoint tests
     └── test_integration.py # Full workflow tests

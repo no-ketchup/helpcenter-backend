@@ -1,4 +1,6 @@
 
+.PHONY: help check-env check-test-env check-prod-safe build build-prod up down dev dev-stop prod prod-up prod-down prod-clean prod-migrate clean prune logs logs-once logs-backend logs-db logs-redis db-shell db-list shell health migrate migrate-test migrate-prod revision check-migrations test test-unit test-integration test-quick test-common test-graphql test-editor test-coverage ci-test lint format fix-lint uv-setup uv-install uv-sync uv-lock uv-add uv-remove uv-run
+
 ENVIRONMENT ?= development
 
 ifneq ($(wildcard .env.local),)
@@ -99,7 +101,7 @@ revision: check-prod-safe ## Create a new migration (NOT ALLOWED IN PRODUCTION)
 	alembic revision --autogenerate -m "$$msg"
 
 migrate-test: check-test-env ## Run migrations on test DB (TEST-ONLY TARGET)
-	docker compose run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test -e TEST_DATABASE_URL_ASYNC=$(TEST_DATABASE_URL_ASYNC) backend python3 scripts/migrate.py --env test --database-url $(TEST_DATABASE_URL_ASYNC)
+	docker compose run --rm -e PYTHONPATH=/code -e ENVIRONMENT=test -e TEST_DATABASE_URL_ASYNC=$(TEST_DATABASE_URL_ASYNC) backend uv run python -m alembic upgrade head
 
 migrate-prod: check-env ## Run migrations on production DB
 	docker compose run --rm -e PYTHONPATH=/code -e ENVIRONMENT=production backend python3 scripts/migrate.py --env production --database-url $(DATABASE_URL_ASYNC)
@@ -136,7 +138,7 @@ ci-test: check-test-env check-prod-safe ## CI mode: reset, abort on exit, propag
 		-e ENVIRONMENT=test \
 		-e PYTHONDONTWRITEBYTECODE=1 \
 		-e TEST_DATABASE_URL_ASYNC=$(TEST_DATABASE_URL_ASYNC) \
-		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; uv run pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
+		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; uv run python -m pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
 	$(MAKE) clean
 
 
@@ -159,9 +161,6 @@ logs-once: check-prod-safe ## Show logs once (NOT ALLOWED IN PRODUCTION)
 shell: check-prod-safe ## Open shell in backend container (NOT ALLOWED IN PRODUCTION)
 	docker compose run --rm backend bash
 
-editor: check-prod-safe ## Run the help center editor (NOT ALLOWED IN PRODUCTION)
-	python scripts/demo/editor.py
-
 db-shell: check-prod-safe ## Open database shell (NOT ALLOWED IN PRODUCTION)
 	docker compose exec db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
@@ -172,8 +171,7 @@ db-list: check-prod-safe ## List databases (NOT ALLOWED IN PRODUCTION)
 prod-up: ## Start production services (requires env vars to be set)
 	@echo "Starting production services..."
 	@echo "Make sure to set: DATABASE_URL_ASYNC, REDIS_URL, SECRET_KEY, DEV_EDITOR_KEY, GCS_BUCKET_NAME, HELPCENTER_GCS, ALLOWED_ORIGINS"
-	ENVIRONMENT=production docker compose up -d db redis
-	sleep 5
+	ENVIRONMENT=production docker compose up -d db redis && sleep 10
 	ENVIRONMENT=production docker compose up backend
 
 prod-down: ## Stop production services
@@ -195,7 +193,7 @@ test: test-unit test-integration ## Run all tests (unit + integration)
 
 test-unit: ## Run unit tests (fast, no database)
 	@echo "Running unit tests (no database required)..."
-	docker compose run --rm \
+	docker compose run --rm --no-deps \
 		-e PYTHONPATH=/code \
 		-e ENVIRONMENT=test \
 		-e PYTHONDONTWRITEBYTECODE=1 \
@@ -212,6 +210,12 @@ test-integration: check-test-env check-prod-safe ## Run integration tests (with 
 		-e ENVIRONMENT=test \
 		-e PYTHONDONTWRITEBYTECODE=1 \
 		-e TEST_DATABASE_URL_ASYNC=$(TEST_DATABASE_URL_ASYNC) \
+		-e SECRET_KEY=$(SECRET_KEY) \
+		-e DEV_EDITOR_KEY=$(DEV_EDITOR_KEY) \
+		-e REDIS_URL=$(REDIS_URL) \
+		-e ALLOWED_ORIGINS=$(ALLOWED_ORIGINS) \
+		-e GCS_BUCKET_NAME=$(GCS_BUCKET_NAME) \
+		-e HELPCENTER_GCS=$(HELPCENTER_GCS) \
 		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; uv run python -m pytest tests/integration/ -c /code/pytest.ini -q --disable-warnings -v'
 	$(MAKE) clean
 
@@ -221,7 +225,7 @@ test-quick: check-test-env check-prod-safe ## Run tests without cleanup (faster 
 		-e ENVIRONMENT=test \
 		-e PYTHONDONTWRITEBYTECODE=1 \
 		-e TEST_DATABASE_URL_ASYNC=$(TEST_DATABASE_URL_ASYNC) \
-		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; uv run pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
+		backend bash -lc 'cd /code && find /code -name __pycache__ -type d -prune -exec rm -rf {} +; uv run python -m pytest -c /code/pytest.ini -q --disable-warnings --maxfail=1 -v'
 
 prod: ## Start production environment
 	$(MAKE) up ENVIRONMENT=production

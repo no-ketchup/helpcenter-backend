@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Unified database migration script for all environments.
-Handles migrations consistently across development, testing, and production.
+Database migration script for all environments.
 """
 
 import os
@@ -11,34 +10,26 @@ from pathlib import Path
 
 def run_migration(environment: str = "development", database_url: str = None):
     """Run database migrations for the specified environment."""
-
-    # Set environment variables
     os.environ["ENVIRONMENT"] = environment
     if database_url:
         os.environ["DATABASE_URL_ASYNC"] = database_url
-        # Convert async URL to sync URL for Alembic if needed
         if database_url.startswith("postgresql+asyncpg://"):
             sync_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
         else:
-            # Already in sync format (like Neon DB)
             sync_url = database_url
         os.environ["DATABASE_URL"] = sync_url
     else:
-        # If no database_url provided, use environment variable
         sync_url = os.environ.get("DATABASE_URL", "postgresql://localhost:5432/test")
 
-    # Ensure PYTHONPATH is set
     project_root = Path(__file__).parent.parent
     os.environ["PYTHONPATH"] = str(project_root)
 
-    # Run alembic migration with better error handling for cloud
     try:
         print(f"Running migrations for {environment}...")
         print(f"Database URL: {sync_url[:50]}...")
 
         result = subprocess.run([
-            "uv", "run", "alembic",
-            "-c", "graphql_api/alembic.ini",
+            "uv", "run", "python", "-m", "alembic",
             "upgrade", "head"
         ], cwd=project_root, check=False, capture_output=True, text=True, timeout=60)
 
@@ -90,8 +81,7 @@ def main():
         # Check migration status
         try:
             result = subprocess.run([
-                "uv", "run", "alembic",
-                "-c", "graphql_api/alembic.ini",
+                "uv", "run", "python", "-m", "alembic",
                 "current"
             ], cwd=Path(__file__).parent.parent, check=True, capture_output=True, text=True)
             print("Current migration status:")
