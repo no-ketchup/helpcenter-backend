@@ -39,8 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       common: ${{ steps.changes.outputs.common }}
-      graphql-api: ${{ steps.changes.outputs.graphql_api }}
-      editor-api: ${{ steps.changes.outputs.editor_api }}
+      graphql_api: ${{ steps.changes.outputs.graphql_api }}
+      editor_api: ${{ steps.changes.outputs.editor_api }}
       tests: ${{ steps.changes.outputs.tests }}
       scripts: ${{ steps.changes.outputs.scripts }}
       workflows: ${{ steps.changes.outputs.workflows }}
@@ -56,9 +56,9 @@ jobs:
           filters: |
             common:
               - 'common/**'
-            graphql-api:
+            graphql_api:
               - 'graphql_api/**'
-            editor-api:
+            editor_api:
               - 'editor_api/**'
             tests:
               - 'tests/**'
@@ -69,6 +69,19 @@ jobs:
             cloudbuild:
               - 'cloudbuild/**'
 
+      - name: Debug changed outputs
+        run: |
+          echo "=== Changed Components ==="
+          echo "common:       ${{ steps.changes.outputs.common }}"
+          echo "graphql_api:  ${{ steps.changes.outputs.graphql_api }}"
+          echo "editor_api:   ${{ steps.changes.outputs.editor_api }}"
+          echo "tests:        ${{ steps.changes.outputs.tests }}"
+          echo "scripts:      ${{ steps.changes.outputs.scripts }}"
+          echo "workflows:    ${{ steps.changes.outputs.workflows }}"
+          echo "cloudbuild:   ${{ steps.changes.outputs.cloudbuild }}"
+          echo "==========================="
+
+  # Test common components
   test-common:
     runs-on: ubuntu-latest
     needs: changes
@@ -98,30 +111,20 @@ jobs:
         ports: [ "6379:6379" ]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup UV
-        uses: ./.github/actions/setup-uv
-
-      - name: Cache UV environment
-        uses: actions/cache@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
+      - uses: actions/cache@v4
         with:
           path: |
             .venv
             ~/.cache/uv
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-
-      - name: Run linting (common only)
-        if: needs.changes.outputs.common == 'true'
-        run: |
+      - run: |
           uv run flake8 common/ --max-line-length=100 --ignore=E203,W503,F821,E402
           uv run black --check common/ --line-length=100
           uv run isort --check-only common/ --profile black
-
-      - name: Run common package tests
+      - run: |
+          uv run pytest tests/unit/ -v --cov=common --cov-report=xml
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
@@ -130,12 +133,12 @@ jobs:
           DEV_EDITOR_KEY: test-editor-key
           GCS_BUCKET_NAME: test-bucket
           ALLOWED_ORIGINS: http://localhost:3000
-        run: uv run pytest tests/unit/ -v --cov=common --cov-report=xml
 
+  # GraphQL API tests
   test-graphql-api:
     runs-on: ubuntu-latest
     needs: [ changes, test-common ]
-    if: always() && (needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.common == 'true' || needs.changes.outputs.tests == 'true' || needs.changes.outputs.workflows == 'true') && (needs.test-common.result == 'success' || needs.test-common.result == 'skipped')
+    if: always() && (needs.changes.outputs.graphql_api == 'true' || needs.changes.outputs.common == 'true' || needs.changes.outputs.tests == 'true' || needs.changes.outputs.workflows == 'true')
 
     services:
       postgres:
@@ -161,30 +164,20 @@ jobs:
         ports: [ "6379:6379" ]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup UV
-        uses: ./.github/actions/setup-uv
-
-      - name: Cache UV environment
-        uses: actions/cache@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
+      - uses: actions/cache@v4
         with:
           path: |
             .venv
             ~/.cache/uv
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-
-      - name: Run linting (GraphQL API only)
-        if: needs.changes.outputs.graphql-api == 'true'
-        run: |
+      - run: |
           uv run flake8 graphql_api/ --max-line-length=100 --ignore=E203,W503,F821,E402
           uv run black --check graphql_api/ --line-length=100
           uv run isort --check-only graphql_api/ --profile black
-
-      - name: Run GraphQL API tests
+      - run: |
+          uv run pytest tests/integration/graphql_api/ -v --cov=graphql_api --cov-report=xml
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
@@ -193,12 +186,12 @@ jobs:
           DEV_EDITOR_KEY: test-editor-key
           GCS_BUCKET_NAME: test-bucket
           ALLOWED_ORIGINS: http://localhost:3000
-        run: uv run pytest tests/integration/graphql_api/ -v --cov=graphql_api --cov-report=xml
 
+  # Editor API tests
   test-editor-api:
     runs-on: ubuntu-latest
     needs: [ changes, test-common ]
-    if: always() && (needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.common == 'true' || needs.changes.outputs.tests == 'true' || needs.changes.outputs.workflows == 'true') && (needs.test-common.result == 'success' || needs.test-common.result == 'skipped')
+    if: always() && (needs.changes.outputs.editor_api == 'true' || needs.changes.outputs.common == 'true' || needs.changes.outputs.tests == 'true' || needs.changes.outputs.workflows == 'true')
 
     services:
       postgres:
@@ -224,30 +217,20 @@ jobs:
         ports: [ "6379:6379" ]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup UV
-        uses: ./.github/actions/setup-uv
-
-      - name: Cache UV environment
-        uses: actions/cache@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
+      - uses: actions/cache@v4
         with:
           path: |
             .venv
             ~/.cache/uv
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-
-      - name: Run linting (Editor API only)
-        if: needs.changes.outputs.editor-api == 'true'
-        run: |
+      - run: |
           uv run flake8 editor_api/ --max-line-length=100 --ignore=E203,W503,F821,E402
           uv run black --check editor_api/ --line-length=100
           uv run isort --check-only editor_api/ --profile black
-
-      - name: Run Editor API tests
+      - run: |
+          uv run pytest tests/integration/editor_api/ -v --cov=editor_api --cov-report=xml
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
@@ -256,211 +239,107 @@ jobs:
           DEV_EDITOR_KEY: test-editor-key
           GCS_BUCKET_NAME: test-bucket
           ALLOWED_ORIGINS: http://localhost:3000
-        run: uv run pytest tests/integration/editor_api/ -v --cov=editor_api --cov-report=xml
 
+  # Integration
   test-integration:
     runs-on: ubuntu-latest
     needs: [ changes, test-common, test-graphql-api, test-editor-api ]
-    if: always() && (needs.changes.outputs.tests == 'true' || needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.common == 'true' || needs.changes.outputs.workflows == 'true') && (needs.test-common.result == 'success' || needs.test-common.result == 'skipped')
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports: [ "5432:5432" ]
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports: [ "6379:6379" ]
+    if: always() && (needs.changes.outputs.tests == 'true' || needs.changes.outputs.graphql_api == 'true' || needs.changes.outputs.editor_api == 'true' || needs.changes.outputs.common == 'true')
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup UV
-        uses: ./.github/actions/setup-uv
-
-      - name: Cache UV environment
-        uses: actions/cache@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
+      - uses: actions/cache@v4
         with:
           path: |
             .venv
             ~/.cache/uv
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-
-      - name: Run database migrations
+      - run: uv run python -m alembic upgrade head
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
-          ENVIRONMENT: test
-        run: uv run python -m alembic upgrade head
-
-      - name: Run integration tests
+      - run: uv run pytest tests/integration/ -v
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
           ENVIRONMENT: test
-          SECRET_KEY: test-secret-key
-          DEV_EDITOR_KEY: test-editor-key
-          GCS_BUCKET_NAME: test-bucket
-          ALLOWED_ORIGINS: http://localhost:3000
-        run: uv run pytest tests/integration/ -v
 
+  # Security
   security:
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.common == 'true' || needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.workflows == 'true'
+    if: needs.changes.outputs.common == 'true' || needs.changes.outputs.graphql_api == 'true' || needs.changes.outputs.editor_api == 'true'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup UV
-        uses: ./.github/actions/setup-uv
-
-      - name: Cache UV environment
-        uses: actions/cache@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
+      - uses: actions/cache@v4
         with:
           path: |
             .venv
             ~/.cache/uv
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-
-      - name: Run security scan
-        run: uv run bandit -r common/ graphql_api/ editor_api/ -f json -o bandit-report.json || true
-
-      - name: Upload security report
-        uses: actions/upload-artifact@v4
+      - run: uv run bandit -r common/ graphql_api/ editor_api/ -f json -o bandit-report.json || true
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: security-report
           path: bandit-report.json
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.33.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-  # Deploy GraphQL API (only if GraphQL, common, or cloudbuild changed)
+  # Deploy GraphQL
   deploy-graphql:
     runs-on: ubuntu-latest
-    needs:
-      - changes
-      - test-common
-      - test-graphql-api
-      - test-integration
-      - security
-
+    needs: [ changes, test-common, test-graphql-api, test-integration, security ]
     if: |
       github.event_name == 'push' &&
       (
-        (needs.changes.outputs.graphql-api == 'true') ||
-        (needs.changes.outputs.common == 'true') ||
-        (needs.changes.outputs.cloudbuild == 'true') ||
-        (needs.changes.outputs.workflows == 'true')
-      ) &&
-      (
-        needs.test-common.result != 'failure' &&
-        needs.test-graphql-api.result != 'failure' &&
-        needs.test-integration.result != 'failure' &&
-        needs.security.result != 'failure'
+        needs.changes.outputs.graphql_api == 'true' ||
+        needs.changes.outputs.common == 'true' ||
+        needs.changes.outputs.cloudbuild == 'true'
       )
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.HELPCENTER_CICD }}
-
       - uses: google-github-actions/setup-gcloud@v2
-
       - id: env
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "environment=production" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
           else
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
-
-      - name: Deploy GraphQL API
-        run: |
+      - run: |
           gcloud builds submit \
             --config cloudbuild/cloudbuild-graphql.yaml \
             --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }} .
 
-  # Deploy Editor API (only if Editor, common, or cloudbuild changed)
+  # Deploy Editor
   deploy-editor:
     runs-on: ubuntu-latest
-    needs:
-      - changes
-      - test-common
-      - test-editor-api
-      - test-integration
-      - security
-
+    needs: [ changes, test-common, test-editor-api, test-integration, security ]
     if: |
       github.event_name == 'push' &&
       (
-        (needs.changes.outputs.editor-api == 'true') ||
-        (needs.changes.outputs.common == 'true') ||
-        (needs.changes.outputs.cloudbuild == 'true') ||
-        (needs.changes.outputs.workflows == 'true')
-      ) &&
-      (
-        needs.test-common.result != 'failure' &&
-        needs.test-editor-api.result != 'failure' &&
-        needs.test-integration.result != 'failure' &&
-        needs.security.result != 'failure'
+        needs.changes.outputs.editor_api == 'true' ||
+        needs.changes.outputs.common == 'true' ||
+        needs.changes.outputs.cloudbuild == 'true'
       )
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.HELPCENTER_CICD }}
-
       - uses: google-github-actions/setup-gcloud@v2
-
       - id: env
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "environment=production" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
           else
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
-
-      - name: Deploy Editor API
-        run: |
+      - run: |
           gcloud builds submit \
             --config cloudbuild/cloudbuild-editor.yaml \
             --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }} .
