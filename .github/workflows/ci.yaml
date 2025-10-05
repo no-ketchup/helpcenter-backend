@@ -348,7 +348,7 @@ jobs:
   trigger-cloud-build:
     runs-on: ubuntu-latest
     needs: [changes, test-common, test-graphql-api, test-editor-api, test-integration, security]
-    if: github.event_name == 'push' && (needs.changes.outputs.common == 'true' || needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.scripts == 'true') && (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') && (needs.test-graphql-api.result == 'success' || needs.test-graphql-api.result == 'skipped') && (needs.test-editor-api.result == 'success' || needs.test-editor-api.result == 'skipped') && (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') && (needs.security.result == 'success' || needs.security.result == 'skipped')
+    if: github.event_name == 'push' && (needs.changes.outputs.common == 'true' || needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.scripts == 'true' || needs.changes.outputs.workflows == 'true') && (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') && (needs.test-graphql-api.result == 'success' || needs.test-graphql-api.result == 'skipped') && (needs.test-editor-api.result == 'success' || needs.test-editor-api.result == 'skipped') && (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') && (needs.security.result == 'success' || needs.security.result == 'skipped')
 
     steps:
     - name: Checkout code
