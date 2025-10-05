@@ -121,9 +121,9 @@ jobs:
           uv run black --check common/ --line-length=100
           uv run isort --check-only common/ --profile black
 
-      - name: Run common package tests
-        env:
-          DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+       - name: Run common package tests
+         env:
+           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
           ENVIRONMENT: test
           SECRET_KEY: test-secret-key
@@ -185,9 +185,9 @@ jobs:
           uv run black --check graphql_api/ --line-length=100
           uv run isort --check-only graphql_api/ --profile black
 
-      - name: Run GraphQL API tests
-        env:
-          DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+       - name: Run GraphQL API tests
+         env:
+           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
           ENVIRONMENT: test
           SECRET_KEY: test-secret-key
@@ -249,9 +249,9 @@ jobs:
           uv run black --check editor_api/ --line-length=100
           uv run isort --check-only editor_api/ --profile black
 
-      - name: Run Editor API tests
-        env:
-          DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+       - name: Run Editor API tests
+         env:
+           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
           ENVIRONMENT: test
           SECRET_KEY: test-secret-key
@@ -306,15 +306,15 @@ jobs:
           restore-keys: |
             uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
 
-      - name: Run database migrations
-        env:
-          DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
-          ENVIRONMENT: test
-        run: uv run python -m alembic upgrade head
+       - name: Run database migrations
+         env:
+           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+           ENVIRONMENT: test
+         run: uv run python -m alembic upgrade head
 
-      - name: Run integration tests
+       - name: Run integration tests
         env:
-          DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+          TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
           ENVIRONMENT: test
           SECRET_KEY: test-secret-key
