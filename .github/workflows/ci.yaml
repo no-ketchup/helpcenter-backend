@@ -377,11 +377,12 @@ jobs:
     if: >
       github.event_name == 'push' &&
       (
-        needs.changes.outputs.common == 'true' ||
-        needs.changes.outputs.graphql-api == 'true' ||
-        needs.changes.outputs.editor-api == 'true' ||
-        needs.changes.outputs.scripts == 'true' ||
-        needs.changes.outputs.cloudbuild == 'true'
+        (needs.changes.outputs.common || 'false') == 'true' ||
+        (needs.changes.outputs.graphql-api || 'false') == 'true' ||
+        (needs.changes.outputs.editor-api || 'false') == 'true' ||
+        (needs.changes.outputs.scripts || 'false') == 'true' ||
+        (needs.changes.outputs.cloudbuild || 'false') == 'true' ||
+        (needs.changes.outputs.workflows || 'false') == 'true'
       ) &&
       needs.test-common.result != 'failure' &&
       needs.test-graphql-api.result != 'failure' &&
@@ -390,21 +391,22 @@ jobs:
       needs.security.result != 'failure'
 
     steps:
-      - name: Debug - Check conditions
+      - name: Debug Conditions
         run: |
-          echo "=== DEBUG INFO ==="
-          echo "github.event_name: ${{ github.event_name }}"
-          echo "changes.common: ${{ needs.changes.outputs.common }}"
-          echo "changes.graphql-api: ${{ needs.changes.outputs.graphql-api }}"
-          echo "changes.editor-api: ${{ needs.changes.outputs.editor-api }}"
-          echo "changes.scripts: ${{ needs.changes.outputs.scripts }}"
-          echo "changes.workflows: ${{ needs.changes.outputs.workflows }}"
-          echo "test-common.result: ${{ needs.test-common.result }}"
-          echo "test-graphql-api.result: ${{ needs.test-graphql-api.result }}"
-          echo "test-editor-api.result: ${{ needs.test-editor-api.result }}"
-          echo "test-integration.result: ${{ needs.test-integration.result }}"
-          echo "security.result: ${{ needs.security.result }}"
-          echo "=================="
+          echo "Event: ${{ github.event_name }}"
+          echo "Changes:"
+          echo "  common: ${{ needs.changes.outputs.common }}"
+          echo "  graphql-api: ${{ needs.changes.outputs.graphql-api }}"
+          echo "  editor-api: ${{ needs.changes.outputs.editor-api }}"
+          echo "  scripts: ${{ needs.changes.outputs.scripts }}"
+          echo "  cloudbuild: ${{ needs.changes.outputs.cloudbuild }}"
+          echo "  workflows: ${{ needs.changes.outputs.workflows }}"
+          echo "Test Results:"
+          echo "  common: ${{ needs.test-common.result }}"
+          echo "  graphql-api: ${{ needs.test-graphql-api.result }}"
+          echo "  editor-api: ${{ needs.test-editor-api.result }}"
+          echo "  integration: ${{ needs.test-integration.result }}"
+          echo "  security: ${{ needs.security.result }}"
 
       - name: Checkout code
         uses: actions/checkout@v4
