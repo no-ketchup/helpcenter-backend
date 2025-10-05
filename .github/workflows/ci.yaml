@@ -334,6 +334,7 @@ jobs:
   # Deploy GraphQL API
   deploy-graphql:
     runs-on: ubuntu-latest
+    environment: prod
     needs: [ changes, test-common, test-graphql-api, test-integration, security ]
     if: |
       github.event_name == 'push' &&
@@ -377,6 +378,7 @@ jobs:
   # Deploy Editor API
   deploy-editor:
     runs-on: ubuntu-latest
+    environment: prod
     needs: [ changes, test-common, test-editor-api, test-integration, security ]
     if: |
       github.event_name == 'push' &&
