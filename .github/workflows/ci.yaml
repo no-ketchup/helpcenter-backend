@@ -160,6 +160,12 @@ jobs:
     - name: Setup UV
       uses: ./.github/actions/setup-uv
 
+    - name: Run database migrations
+      env:
+        TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        ENVIRONMENT: test
+      run: uv run python -m alembic upgrade head
+
     - name: Run linting (GraphQL API only)
       if: needs.changes.outputs.graphql-api == 'true'
       run: |
@@ -169,7 +175,7 @@ jobs:
 
     - name: Run GraphQL API tests
       env:
-        DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
         REDIS_URL: redis://localhost:6379
         ENVIRONMENT: test
         SECRET_KEY: test-secret-key
@@ -216,6 +222,12 @@ jobs:
     - name: Setup UV
       uses: ./.github/actions/setup-uv
 
+    - name: Run database migrations
+      env:
+        TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        ENVIRONMENT: test
+      run: uv run python -m alembic upgrade head
+
     - name: Run linting (Editor API only)
       if: needs.changes.outputs.editor-api == 'true'
       run: |
@@ -225,7 +237,7 @@ jobs:
 
     - name: Run Editor API tests
       env:
-        DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
         REDIS_URL: redis://localhost:6379
         ENVIRONMENT: test
         SECRET_KEY: test-secret-key
@@ -272,9 +284,15 @@ jobs:
     - name: Setup UV
       uses: ./.github/actions/setup-uv
 
+    - name: Run database migrations
+      env:
+        TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        ENVIRONMENT: test
+      run: uv run python -m alembic upgrade head
+
     - name: Run integration tests
       env:
-        DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
         REDIS_URL: redis://localhost:6379
         ENVIRONMENT: test
         SECRET_KEY: test-secret-key
