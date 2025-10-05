@@ -259,6 +259,29 @@ jobs:
     needs: [ changes, test-common, test-graphql-api, test-editor-api ]
     if: always()
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports: [ "5432:5432" ]
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports: [ "6379:6379" ]
+
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-uv
@@ -271,11 +294,16 @@ jobs:
       - run: uv run python -m alembic upgrade head
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+          ENVIRONMENT: test
       - run: uv run pytest tests/integration/ -v
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
           ENVIRONMENT: test
+          SECRET_KEY: test-secret-key
+          DEV_EDITOR_KEY: test-editor-key
+          GCS_BUCKET_NAME: test-bucket
+          ALLOWED_ORIGINS: http://localhost:3000
 
   # Security
   security:
