@@ -33,6 +33,7 @@ services:
   backend:
     build:
       context: .
+      dockerfile: Dockerfile.uv
     container_name: helpcenter-backend
     restart: unless-stopped
     environment:
@@ -56,7 +57,11 @@ services:
       - "8000:8000"
     command: >
       sh -c "
-      uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      if [ \"$$ENVIRONMENT\" = \"development\" ]; then
+        uv run uvicorn graphql_api.main:app --host 0.0.0.0 --port 8000 --reload
+      else
+        uv run uvicorn graphql_api.main:app --host 0.0.0.0 --port 8000
+      fi
       "
 
 volumes:

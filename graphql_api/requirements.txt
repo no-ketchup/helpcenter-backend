@@ -1,0 +1,15 @@
+# Common package (local)
+../common
+
+# GraphQL API specific
+uliweb-alembic
+fastapi
+strawberry-graphql[fastapi]>=0.205.0
+uvicorn[standard]
+python-dotenv
+pytest
+httpx>=0.28.0
+pytest-asyncio
+typer
+rich==13.7.0
+httpx==0.28.1

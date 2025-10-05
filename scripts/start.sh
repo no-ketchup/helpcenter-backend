@@ -21,13 +21,12 @@ python3 -c "from fastapi import FastAPI; print('FastAPI import: SUCCESS')" || {
 }
 
 echo "Skipping migration script for now..."
-# python3 scripts/migrate.py --env production || {
-#   echo "Migration failed, but continuing startup..."
-# }
 
 echo "Testing FastAPI app import..."
 python3 -c "
-from app.main import app
+import sys
+sys.path.append('graphql-api')
+from main import app
 print('FastAPI app import: SUCCESS')
 print('App title:', app.title)
 " || {
@@ -36,4 +35,5 @@ print('App title:', app.title)
 }
 
 echo "Starting FastAPI app on port ${PORT:-8080}..."
-exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}
+cd graphql_api
+exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

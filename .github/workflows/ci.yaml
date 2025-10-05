@@ -1,0 +1,370 @@
+name: HelpCenter Backend CI/CD (UV)
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'common/**'
+      - 'graphql_api/**'
+      - 'editor_api/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'common/**'
+      - 'graphql_api/**'
+      - 'editor_api/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/**'
+
+env:
+  PYTHON_VERSION: '3.11'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # Detect what changed to optimize build
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      common: ${{ steps.changes.outputs.common }}
+      graphql-api: ${{ steps.changes.outputs.graphql_api }}
+      editor-api: ${{ steps.changes.outputs.editor_api }}
+      tests: ${{ steps.changes.outputs.tests }}
+      scripts: ${{ steps.changes.outputs.scripts }}
+      workflows: ${{ steps.changes.outputs.workflows }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Detect changes
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          common:
+            - 'common/**'
+          graphql-api:
+            - 'graphql_api/**'
+          editor-api:
+            - 'editor_api/**'
+          tests:
+            - 'tests/**'
+          scripts:
+            - 'scripts/**'
+          workflows:
+            - '.github/workflows/**'
+
+  # Test common components (always run if common changed)
+  test-common:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.common == 'true' || needs.changes.outputs.tests == 'true'
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup UV
+      uses: ./.github/actions/setup-uv
+
+    - name: Run linting (common only)
+      if: needs.changes.outputs.common == 'true'
+      run: |
+        uv run flake8 common/ --max-line-length=100 --ignore=E203,W503,F821,E402
+        uv run black --check common/ --line-length=100
+        uv run isort --check-only common/ --profile black
+
+    - name: Run common package tests
+      env:
+        DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+        SECRET_KEY: test-secret-key
+        DEV_EDITOR_KEY: test-editor-key
+        GCS_BUCKET_NAME: test-bucket
+        ALLOWED_ORIGINS: http://localhost:3000
+      run: uv run pytest tests/unit/ -v --cov=common --cov-report=xml
+
+  # Test GraphQL API (only if GraphQL or common changed)
+  test-graphql-api:
+    runs-on: ubuntu-latest
+    needs: [changes, test-common]
+    if: always() && (needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.common == 'true' || needs.changes.outputs.tests == 'true') && (needs.test-common.result == 'success' || needs.test-common.result == 'skipped')
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup UV
+      uses: ./.github/actions/setup-uv
+
+    - name: Run linting (GraphQL API only)
+      if: needs.changes.outputs.graphql-api == 'true'
+      run: |
+        uv run flake8 graphql_api/ --max-line-length=100 --ignore=E203,W503,F821,E402
+        uv run black --check graphql_api/ --line-length=100
+        uv run isort --check-only graphql_api/ --profile black
+
+    - name: Run GraphQL API tests
+      env:
+        DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+        SECRET_KEY: test-secret-key
+        DEV_EDITOR_KEY: test-editor-key
+        GCS_BUCKET_NAME: test-bucket
+        ALLOWED_ORIGINS: http://localhost:3000
+      run: uv run pytest tests/integration/graphql_api/ -v --cov=graphql_api --cov-report=xml
+
+  # Test Editor API (only if Editor or common changed)
+  test-editor-api:
+    runs-on: ubuntu-latest
+    needs: [changes, test-common]
+    if: always() && (needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.common == 'true' || needs.changes.outputs.tests == 'true') && (needs.test-common.result == 'success' || needs.test-common.result == 'skipped')
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup UV
+      uses: ./.github/actions/setup-uv
+
+    - name: Run linting (Editor API only)
+      if: needs.changes.outputs.editor-api == 'true'
+      run: |
+        uv run flake8 editor_api/ --max-line-length=100 --ignore=E203,W503,F821,E402
+        uv run black --check editor_api/ --line-length=100
+        uv run isort --check-only editor_api/ --profile black
+
+    - name: Run Editor API tests
+      env:
+        DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+        SECRET_KEY: test-secret-key
+        DEV_EDITOR_KEY: test-editor-key
+        GCS_BUCKET_NAME: test-bucket
+        ALLOWED_ORIGINS: http://localhost:3000
+      run: uv run pytest tests/integration/editor_api/ -v --cov=editor_api --cov-report=xml
+
+  # Integration tests (only if tests changed or any API changed)
+  test-integration:
+    runs-on: ubuntu-latest
+    needs: [changes, test-common, test-graphql-api, test-editor-api]
+    if: always() && (needs.changes.outputs.tests == 'true' || needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.common == 'true') && (needs.test-common.result == 'success' || needs.test-common.result == 'skipped')
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup UV
+      uses: ./.github/actions/setup-uv
+
+    - name: Run integration tests
+      env:
+        DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+        REDIS_URL: redis://localhost:6379
+        ENVIRONMENT: test
+        SECRET_KEY: test-secret-key
+        DEV_EDITOR_KEY: test-editor-key
+        GCS_BUCKET_NAME: test-bucket
+        ALLOWED_ORIGINS: http://localhost:3000
+      run: uv run pytest tests/integration/ -v
+
+  # Security scan (only if code changed)
+  security:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.common == 'true' || needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.editor-api == 'true'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v1
+      with:
+        version: "latest"
+
+    - name: Set up Python
+      run: uv python install ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: uv sync --frozen
+
+    - name: Run security scan
+      run: uv run bandit -r common/ graphql_api/ editor_api/ -f json -o bandit-report.json || true
+
+    - name: Upload security report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-report
+        path: bandit-report.json
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@0.33.0
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Trigger Cloud Build (only if tests pass and code changed)
+  trigger-cloud-build:
+    runs-on: ubuntu-latest
+    needs: [changes, test-common, test-graphql-api, test-editor-api, test-integration, security]
+    if: github.event_name == 'push' && (needs.changes.outputs.common == 'true' || needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.scripts == 'true') && (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') && (needs.test-graphql-api.result == 'success' || needs.test-graphql-api.result == 'skipped') && (needs.test-editor-api.result == 'success' || needs.test-editor-api.result == 'skipped') && (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') && (needs.security.result == 'success' || needs.security.result == 'skipped')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.HELPCENTER_CICD }}
+
+    - name: Set up Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Determine environment
+      id: env
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "environment=production" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+          echo "environment=staging" >> $GITHUB_OUTPUT
+        else
+          echo "environment=staging" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Trigger Cloud Build for GraphQL API
+      run: |
+        gcloud builds submit \
+          --config cloudbuild-graphql.yaml \
+          --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }} \
+          .
+
+    - name: Trigger Cloud Build for Editor API
+      run: |
+        gcloud builds submit \
+          --config cloudbuild-editor.yaml \
+          --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }} \
+          .

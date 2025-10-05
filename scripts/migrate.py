@@ -11,7 +11,7 @@ from pathlib import Path
 
 def run_migration(environment: str = "development", database_url: str = None):
     """Run database migrations for the specified environment."""
-    
+
     # Set environment variables
     os.environ["ENVIRONMENT"] = environment
     if database_url:
@@ -26,22 +26,22 @@ def run_migration(environment: str = "development", database_url: str = None):
     else:
         # If no database_url provided, use environment variable
         sync_url = os.environ.get("DATABASE_URL", "postgresql://localhost:5432/test")
-    
+
     # Ensure PYTHONPATH is set
     project_root = Path(__file__).parent.parent
     os.environ["PYTHONPATH"] = str(project_root)
-    
+
     # Run alembic migration with better error handling for cloud
     try:
         print(f"Running migrations for {environment}...")
         print(f"Database URL: {sync_url[:50]}...")
-        
+
         result = subprocess.run([
-            "alembic", 
-            "-c", "alembic.ini", 
+            "uv", "run", "alembic",
+            "-c", "graphql_api/alembic.ini",
             "upgrade", "head"
         ], cwd=project_root, check=False, capture_output=True, text=True, timeout=60)
-        
+
         if result.returncode == 0:
             print(f"Migrations completed successfully for {environment}")
             if result.stdout:
@@ -52,7 +52,7 @@ def run_migration(environment: str = "development", database_url: str = None):
             print(f"STDOUT: {result.stdout}")
             print(f"STDERR: {result.stderr}")
             return False
-        
+
     except subprocess.TimeoutExpired:
         print(f"Migration timed out for {environment}")
         return False
@@ -66,10 +66,10 @@ def run_migration(environment: str = "development", database_url: str = None):
 def main():
     """Main entry point for migration script."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Run database migrations")
     parser.add_argument(
-        "--env", 
+        "--env",
         choices=["development", "test", "staging", "production"],
         default="development",
         help="Environment to run migrations for"
@@ -83,15 +83,15 @@ def main():
         action="store_true",
         help="Check migration status without running"
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.check:
         # Check migration status
         try:
             result = subprocess.run([
-                "alembic", 
-                "-c", "alembic.ini", 
+                "uv", "run", "alembic",
+                "-c", "graphql_api/alembic.ini",
                 "current"
             ], cwd=Path(__file__).parent.parent, check=True, capture_output=True, text=True)
             print("Current migration status:")
@@ -100,7 +100,7 @@ def main():
         except subprocess.CalledProcessError as e:
             print(f"Failed to check migration status: {e.stderr}")
             return 1
-    
+
     # Run migrations
     success = run_migration(args.env, args.database_url)
     sys.exit(0 if success else 1)

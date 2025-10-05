@@ -1,6 +1,0 @@
-# Common package (local)
-../helpcenter-common
-
-# Editor API specific
-fastapi
-functions-framework

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "helpcenter-graphql-api"
+version = "1.0.0"
+description = "GraphQL API for Help Center Backend"
+requires-python = ">=3.11"
+dependencies = [
+    "helpcenter-common @ file://../common",
+    "fastapi",
+    "strawberry-graphql[fastapi]>=0.205.0",
+    "uvicorn[standard]",
+    "python-dotenv",
+    "uliweb-alembic",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx>=0.28.0",
+    "typer",
+    "rich==13.7.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0.0",
+    "pytest-asyncio",
+    "httpx>=0.28.0",
+    "typer",
+    "rich==13.7.0",
+]

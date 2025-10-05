@@ -1,0 +1,61 @@
+# Cloud Build configuration for Editor API (Cloud Function)
+steps:
+  # Build Editor API Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-f', 'editor_api/Dockerfile',
+      '-t', 'gcr.io/$PROJECT_ID/helpcenter-editor-api:${_GITHUB_SHA}',
+      '-t', 'gcr.io/$PROJECT_ID/helpcenter-editor-api:latest',
+      '--build-arg', 'ENVIRONMENT=${_ENVIRONMENT}',
+      '.'
+    ]
+
+  # Push to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/helpcenter-editor-api:${_GITHUB_SHA}']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/helpcenter-editor-api:latest']
+
+  # Deploy to Cloud Function
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'functions', 'deploy', 'helpcenter-editor-api-${_ENVIRONMENT}',
+      '--gen2',
+      '--runtime', 'python311',
+      '--source', '.',
+      '--entry-point', 'editor_api',
+      '--trigger', 'http',
+      '--allow-unauthenticated',
+      '--service-account', 'helpcenter-runtime@$PROJECT_ID.iam.gserviceaccount.com',
+      '--set-env-vars', 'ENVIRONMENT=${_ENVIRONMENT}',
+      '--set-env-vars', 'NEON_DB_CONNECTION_STRING=${_NEON_DB_CONNECTION_STRING}',
+      '--set-env-vars', 'REDIS_URL=${_REDIS_URL}',
+      '--set-env-vars', 'SECRET_KEY=${_SECRET_KEY}',
+      '--set-env-vars', 'DEV_EDITOR_KEY=${_DEV_EDITOR_KEY}',
+      '--set-env-vars', 'GCS_BUCKET_NAME=${_GCS_BUCKET_NAME}',
+      '--set-env-vars', 'ALLOWED_ORIGINS=${_ALLOWED_ORIGINS}',
+      '--memory', '1Gi',
+      '--timeout', '300s',
+      '--max-instances', '10',
+      '--region', '${_REGION}'
+    ]
+
+# Substitution variables
+substitutions:
+  _ENVIRONMENT: 'staging'
+  _REGION: 'us-central1'
+  _GITHUB_SHA: 'latest'
+  _NEON_DB_CONNECTION_STRING: ''
+  _REDIS_URL: ''
+  _SECRET_KEY: ''
+  _DEV_EDITOR_KEY: ''
+  _GCS_BUCKET_NAME: ''
+  _ALLOWED_ORIGINS: ''
+
+# Options
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'

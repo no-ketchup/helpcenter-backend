@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "helpcenter-editor-api"
+version = "1.0.0"
+description = "Editor API for Help Center Backend"
+requires-python = ">=3.11"
+dependencies = [
+    "helpcenter-common @ file://../common",
+    "fastapi",
+    "functions-framework",
+]
+
+[tool.uv]
+dev-dependencies = []

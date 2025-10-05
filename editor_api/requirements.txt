@@ -1,0 +1,6 @@
+# Common package (local)
+../common
+
+# Editor API specific
+fastapi
+functions-framework
