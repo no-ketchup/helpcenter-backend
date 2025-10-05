@@ -64,9 +64,9 @@ jobs:
             scripts:
               - 'scripts/**'
             workflows:
-             - '.github/workflows/**'
+              - '.github/workflows/**'
             cloudbuild:
-             - 'cloudbuild/**'
+              - 'cloudbuild/**'
 
   # Test common components
   test-common:
@@ -373,7 +373,7 @@ jobs:
   trigger-cloud-build:
     runs-on: ubuntu-latest
     needs: [ changes, test-common, test-graphql-api, test-editor-api, test-integration, security ]
-    if: github.event_name == 'push' && (needs.changes.outputs.common == 'true' || needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.scripts == 'true' || needs.changes.outputs.workflows == 'true' || needs.changes.outputs.cloudbuild == 'true') && needs.test-common.result != 'failure' && needs.test-graphql-api.result != 'failure' && needs.test-editor-api.result != 'failure' && needs.test-integration.result != 'failure'
+    if: github.event_name == 'push' && (needs.changes.outputs.common == 'true' || needs.changes.outputs.graphql-api == 'true' || needs.changes.outputs.editor-api == 'true' || needs.changes.outputs.scripts == 'true' || needs.changes.outputs.workflows == 'true' || needs.changes.outputs.cloudbuild == 'true') && needs.test-common.result != 'failure' && needs.test-graphql-api.result != 'failure' && needs.test-editor-api.result != 'failure' && needs.test-integration.result != 'failure' && needs.security.result != 'failure'
 
     steps:
       - name: Checkout code
