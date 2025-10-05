@@ -69,7 +69,6 @@ jobs:
             cloudbuild:
               - 'cloudbuild/**'
 
-  # Test common components
   test-common:
     runs-on: ubuntu-latest
     needs: changes
@@ -133,7 +132,6 @@ jobs:
           ALLOWED_ORIGINS: http://localhost:3000
         run: uv run pytest tests/unit/ -v --cov=common --cov-report=xml
 
-  # Test GraphQL API
   test-graphql-api:
     runs-on: ubuntu-latest
     needs: [ changes, test-common ]
@@ -197,7 +195,6 @@ jobs:
           ALLOWED_ORIGINS: http://localhost:3000
         run: uv run pytest tests/integration/graphql_api/ -v --cov=graphql_api --cov-report=xml
 
-  # Test Editor API
   test-editor-api:
     runs-on: ubuntu-latest
     needs: [ changes, test-common ]
@@ -261,7 +258,6 @@ jobs:
           ALLOWED_ORIGINS: http://localhost:3000
         run: uv run pytest tests/integration/editor_api/ -v --cov=editor_api --cov-report=xml
 
-  # Integration tests
   test-integration:
     runs-on: ubuntu-latest
     needs: [ changes, test-common, test-graphql-api, test-editor-api ]
@@ -324,7 +320,6 @@ jobs:
           ALLOWED_ORIGINS: http://localhost:3000
         run: uv run pytest tests/integration/ -v
 
-  # Security scan
   security:
     runs-on: ubuntu-latest
     needs: changes
@@ -370,52 +365,32 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-  trigger-cloud-build:
+  # Deploy GraphQL API (only if GraphQL, common, or cloudbuild changed)
+  deploy-graphql:
     runs-on: ubuntu-latest
     needs:
       - changes
       - test-common
       - test-graphql-api
-      - test-editor-api
       - test-integration
       - security
 
     if: |
       github.event_name == 'push' &&
       (
-        (needs.changes.outputs.common == 'true') ||
         (needs.changes.outputs.graphql-api == 'true') ||
-        (needs.changes.outputs.editor-api == 'true') ||
-        (needs.changes.outputs.scripts == 'true') ||
+        (needs.changes.outputs.common == 'true') ||
         (needs.changes.outputs.cloudbuild == 'true') ||
         (needs.changes.outputs.workflows == 'true')
       ) &&
       (
-        (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
-        (needs.test-graphql-api.result == 'success' || needs.test-graphql-api.result == 'skipped') &&
-        (needs.test-editor-api.result == 'success' || needs.test-editor-api.result == 'skipped') &&
-        (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
-        (needs.security.result == 'success' || needs.security.result == 'skipped')
+        needs.test-common.result != 'failure' &&
+        needs.test-graphql-api.result != 'failure' &&
+        needs.test-integration.result != 'failure' &&
+        needs.security.result != 'failure'
       )
 
     steps:
-      - name: Debug Condition Summary
-        run: |
-          echo "Event: ${{ github.event_name }}"
-          echo "=== Changed Components ==="
-          echo "common:        ${{ needs.changes.outputs.common }}"
-          echo "graphql-api:   ${{ needs.changes.outputs.graphql-api }}"
-          echo "editor-api:    ${{ needs.changes.outputs.editor-api }}"
-          echo "scripts:       ${{ needs.changes.outputs.scripts }}"
-          echo "cloudbuild:    ${{ needs.changes.outputs.cloudbuild }}"
-          echo "workflows:     ${{ needs.changes.outputs.workflows }}"
-          echo "=== Test Results ==="
-          echo "test-common:       ${{ needs.test-common.result }}"
-          echo "test-graphql-api:  ${{ needs.test-graphql-api.result }}"
-          echo "test-editor-api:   ${{ needs.test-editor-api.result }}"
-          echo "test-integration:  ${{ needs.test-integration.result }}"
-          echo "security:          ${{ needs.security.result }}"
-
       - uses: actions/checkout@v4
 
       - uses: google-github-actions/auth@v2
@@ -434,13 +409,57 @@ jobs:
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
 
-      - name: Trigger Cloud Build for GraphQL API
+      - name: Deploy GraphQL API
         run: |
           gcloud builds submit \
             --config cloudbuild/cloudbuild-graphql.yaml \
             --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }} .
 
-      - name: Trigger Cloud Build for Editor API
+  # Deploy Editor API (only if Editor, common, or cloudbuild changed)
+  deploy-editor:
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+      - test-common
+      - test-editor-api
+      - test-integration
+      - security
+
+    if: |
+      github.event_name == 'push' &&
+      (
+        (needs.changes.outputs.editor-api == 'true') ||
+        (needs.changes.outputs.common == 'true') ||
+        (needs.changes.outputs.cloudbuild == 'true') ||
+        (needs.changes.outputs.workflows == 'true')
+      ) &&
+      (
+        needs.test-common.result != 'failure' &&
+        needs.test-editor-api.result != 'failure' &&
+        needs.test-integration.result != 'failure' &&
+        needs.security.result != 'failure'
+      )
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.HELPCENTER_CICD }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy Editor API
         run: |
           gcloud builds submit \
             --config cloudbuild/cloudbuild-editor.yaml \
