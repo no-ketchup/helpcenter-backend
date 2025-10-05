@@ -345,9 +345,12 @@ jobs:
       )
     steps:
       - uses: actions/checkout@v4
-      - uses: google-github-actions/auth@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.HELPCENTER_CICD }}
+          create_credentials_file: true
+          export_environment_variables: true
       - uses: google-github-actions/setup-gcloud@v2
       - id: env
         run: |
@@ -375,9 +378,12 @@ jobs:
       )
     steps:
       - uses: actions/checkout@v4
-      - uses: google-github-actions/auth@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.HELPCENTER_CICD }}
+          create_credentials_file: true
+          export_environment_variables: true
       - uses: google-github-actions/setup-gcloud@v2
       - id: env
         run: |
