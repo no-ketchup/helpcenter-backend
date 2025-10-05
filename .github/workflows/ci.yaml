@@ -44,15 +44,14 @@ jobs:
       tests: ${{ steps.changes.outputs.tests }}
       scripts: ${{ steps.changes.outputs.scripts }}
       workflows: ${{ steps.changes.outputs.workflows }}
+      cloudbuild: ${{ steps.changes.outputs.cloudbuild }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Detect changes
+      - id: changes
         uses: dorny/paths-filter@v2
-        id: changes
         with:
           filters: |
             common:
@@ -371,56 +370,61 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-  # Trigger Cloud Build
   trigger-cloud-build:
     runs-on: ubuntu-latest
-    if: >
+    needs:
+      - changes
+      - test-common
+      - test-graphql-api
+      - test-editor-api
+      - test-integration
+      - security
+
+    if: |
       github.event_name == 'push' &&
       (
-        (needs.changes.outputs.common || 'false') == 'true' ||
-        (needs.changes.outputs.graphql-api || 'false') == 'true' ||
-        (needs.changes.outputs.editor-api || 'false') == 'true' ||
-        (needs.changes.outputs.scripts || 'false') == 'true' ||
-        (needs.changes.outputs.cloudbuild || 'false') == 'true' ||
-        (needs.changes.outputs.workflows || 'false') == 'true'
+        (needs.changes.outputs.common == 'true') ||
+        (needs.changes.outputs.graphql-api == 'true') ||
+        (needs.changes.outputs.editor-api == 'true') ||
+        (needs.changes.outputs.scripts == 'true') ||
+        (needs.changes.outputs.cloudbuild == 'true') ||
+        (needs.changes.outputs.workflows == 'true')
       ) &&
-      needs.test-common.result != 'failure' &&
-      needs.test-graphql-api.result != 'failure' &&
-      needs.test-editor-api.result != 'failure' &&
-      needs.test-integration.result != 'failure' &&
-      needs.security.result != 'failure'
+      (
+        (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
+        (needs.test-graphql-api.result == 'success' || needs.test-graphql-api.result == 'skipped') &&
+        (needs.test-editor-api.result == 'success' || needs.test-editor-api.result == 'skipped') &&
+        (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
+        (needs.security.result == 'success' || needs.security.result == 'skipped')
+      )
 
     steps:
-      - name: Debug Conditions
+      - name: Debug Condition Summary
         run: |
           echo "Event: ${{ github.event_name }}"
-          echo "Changes:"
-          echo "  common: ${{ needs.changes.outputs.common }}"
-          echo "  graphql-api: ${{ needs.changes.outputs.graphql-api }}"
-          echo "  editor-api: ${{ needs.changes.outputs.editor-api }}"
-          echo "  scripts: ${{ needs.changes.outputs.scripts }}"
-          echo "  cloudbuild: ${{ needs.changes.outputs.cloudbuild }}"
-          echo "  workflows: ${{ needs.changes.outputs.workflows }}"
-          echo "Test Results:"
-          echo "  common: ${{ needs.test-common.result }}"
-          echo "  graphql-api: ${{ needs.test-graphql-api.result }}"
-          echo "  editor-api: ${{ needs.test-editor-api.result }}"
-          echo "  integration: ${{ needs.test-integration.result }}"
-          echo "  security: ${{ needs.security.result }}"
+          echo "=== Changed Components ==="
+          echo "common:        ${{ needs.changes.outputs.common }}"
+          echo "graphql-api:   ${{ needs.changes.outputs.graphql-api }}"
+          echo "editor-api:    ${{ needs.changes.outputs.editor-api }}"
+          echo "scripts:       ${{ needs.changes.outputs.scripts }}"
+          echo "cloudbuild:    ${{ needs.changes.outputs.cloudbuild }}"
+          echo "workflows:     ${{ needs.changes.outputs.workflows }}"
+          echo "=== Test Results ==="
+          echo "test-common:       ${{ needs.test-common.result }}"
+          echo "test-graphql-api:  ${{ needs.test-graphql-api.result }}"
+          echo "test-editor-api:   ${{ needs.test-editor-api.result }}"
+          echo "test-integration:  ${{ needs.test-integration.result }}"
+          echo "security:          ${{ needs.security.result }}"
 
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.HELPCENTER_CICD }}
 
-      - name: Set up Google Cloud CLI
-        uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Determine environment
-        id: env
+      - id: env
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "environment=production" >> $GITHUB_OUTPUT
@@ -434,12 +438,10 @@ jobs:
         run: |
           gcloud builds submit \
             --config cloudbuild/cloudbuild-graphql.yaml \
-            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }} \
-            .
+            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }} .
 
       - name: Trigger Cloud Build for Editor API
         run: |
           gcloud builds submit \
             --config cloudbuild/cloudbuild-editor.yaml \
-            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }} \
-            .
+            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }} .
