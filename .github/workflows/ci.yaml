@@ -345,6 +345,16 @@ jobs:
       )
     steps:
       - uses: actions/checkout@v4
+      - name: Debug - Check HELPCENTER_CICD secret
+        run: |
+          echo "Checking HELPCENTER_CICD secret..."
+          if [ -z "${{ secrets.HELPCENTER_CICD }}" ]; then
+            echo "HELPCENTER_CICD secret is empty or not set"
+            echo "This will cause authentication to fail"
+            exit 1
+          else
+            echo "HELPCENTER_CICD secret is set (length: ${#HELPCENTER_CICD})"
+          fi
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -378,6 +388,16 @@ jobs:
       )
     steps:
       - uses: actions/checkout@v4
+      - name: Debug - Check HELPCENTER_CICD secret
+        run: |
+          echo "Checking HELPCENTER_CICD secret..."
+          if [ -z "${{ secrets.HELPCENTER_CICD }}" ]; then
+            echo "HELPCENTER_CICD secret is empty or not set"
+            echo "This will cause authentication to fail"
+            exit 1
+          else
+            echo "HELPCENTER_CICD secret is set (length: ${#HELPCENTER_CICD})"
+          fi
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
