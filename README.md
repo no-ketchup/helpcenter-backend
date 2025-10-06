@@ -86,7 +86,6 @@ helpcenter-backend/
 - **Input Validation**: Comprehensive Pydantic validation with custom validators
 - **Test Coverage**: Full test suite with async support and database isolation
 - **Docker Support**: Multi-stage builds for development and production
-- **CLI Editor**: Terminal-based content management tool
 
 ## Quick Start
 
