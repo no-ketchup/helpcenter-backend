@@ -25,7 +25,7 @@ gcloud functions deploy ${FUNCTION_NAME} \
   --runtime=python311 \
   --source=. \
   --entry-point=editor_api \
-  --trigger=http \
+  --trigger-http \
   --allow-unauthenticated \
   --service-account=helpcenter-runtime@${PROJECT_ID}.iam.gserviceaccount.com \
   --set-env-vars "ENVIRONMENT=${ENVIRONMENT}" \

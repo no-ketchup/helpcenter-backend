@@ -371,15 +371,19 @@ jobs:
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
       - name: Deploy GraphQL API
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
+          NEON_DB_CONNECTION_STRING: ${{ secrets.NEON_DB_CONNECTION_STRING }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
+          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+          HELPCENTER_GCS: ${{ secrets.HELPCENTER_GCS }}
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
         run: |
           echo "Starting GraphQL API deployment..."
-          gcloud builds submit \
-            --config cloudbuild/cloudbuild-graphql.yaml \
-            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }},_REGION=${{ secrets.GOOGLE_CLOUD_REGION }},_NEON_DB_CONNECTION_STRING=${{ secrets.NEON_DB_CONNECTION_STRING }},_REDIS_URL=${{ secrets.REDIS_URL }},_SECRET_KEY=${{ secrets.SECRET_KEY }},_DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }},_GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }},_HELPCENTER_GCS=${{ secrets.HELPCENTER_GCS }},_ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} \
-            --async \
-            . &
-          echo "Build submitted successfully"
-          echo "Monitor progress at: https://console.cloud.google.com/cloud-build/builds?project=${{ secrets.GOOGLE_CLOUD_PROJECT }}"
+          ./scripts/deploy-cloud-run.sh ${{ steps.env.outputs.environment }} ${{ github.sha }}
 
   # Deploy Editor API
   deploy-editor:
@@ -421,12 +425,16 @@ jobs:
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
       - name: Deploy Editor API
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
+          NEON_DB_CONNECTION_STRING: ${{ secrets.NEON_DB_CONNECTION_STRING }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
+          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+          HELPCENTER_GCS: ${{ secrets.HELPCENTER_GCS }}
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
         run: |
           echo "Starting Editor API deployment..."
-          gcloud builds submit \
-            --config cloudbuild/cloudbuild-editor.yaml \
-            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_REGION=${{ secrets.GOOGLE_CLOUD_REGION }},_NEON_DB_CONNECTION_STRING=${{ secrets.NEON_DB_CONNECTION_STRING }},_REDIS_URL=${{ secrets.REDIS_URL }},_SECRET_KEY=${{ secrets.SECRET_KEY }},_DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }},_GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }},_HELPCENTER_GCS=${{ secrets.HELPCENTER_GCS }},_ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} \
-            --async \
-            . &
-          echo "Build submitted successfully"
-          echo "Monitor progress at: https://console.cloud.google.com/cloud-build/builds?project=${{ secrets.GOOGLE_CLOUD_PROJECT }}"
+          ./scripts/deploy-cloud-function.sh ${{ steps.env.outputs.environment }}

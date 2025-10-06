@@ -6,7 +6,7 @@ A help center backend with clean, separated architecture, built with FastAPI, Gr
 - **Clean Structure**: Migrated from `helpcenter-*` to clean `common/`, `graphql_api/`, `editor_api/`
 - **UV Integration**: Dependency management with `pyproject.toml` and lock files
 - **Test Optimization**: Two testing strategy (fast unit tests + comprehensive integration tests)
-- **CI/CD Enhancement**: Optimized GitHub Actions with path-based triggering and UV caching
+- **CI/CD**: GitHub Actions with path-based triggering and UV caching
 - **Code Quality**: Automated linting, formatting, and import sorting
 - **Production Ready**: All tests passing with proper alembic migrations
 
@@ -275,13 +275,13 @@ tests/
 
 ### Automated CI/CD
 
-The project includes a complete CI/CD pipeline with GitHub Actions and UV optimization:
+The project includes a CI/CD pipeline with GitHub Actions and UV optimization:
 
 1. **Smart Change Detection**: Only runs tests for changed components
 2. **Parallel Testing**: Separate jobs for common, GraphQL API, Editor API, and integration tests
 3. **UV Setup**: Reusable composite action for consistent dependency management
 4. **Security Scanning**: Bandit and Trivy vulnerability scanning with SARIF upload
-5. **Hybrid Deployment**: GitHub Actions for testing, Cloud Build for deployment
+5. **Hybrid Deployment**: GitHub Actions for testing, Cloud Build for deployment (optional)
 6. **Environment-Specific**: Staging (develop branch) and production (main branch) deployments
 
 #### CI/CD Features
