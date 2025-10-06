@@ -370,10 +370,13 @@ jobs:
           else
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
-      - run: |
+      - name: Deploy GraphQL API
+        run: |
           gcloud builds submit \
             --config cloudbuild/cloudbuild-graphql.yaml \
-            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }},_REGION=${{ secrets.GOOGLE_CLOUD_REGION }},_NEON_DB_CONNECTION_STRING=${{ secrets.NEON_DB_CONNECTION_STRING }},_REDIS_URL=${{ secrets.REDIS_URL }},_SECRET_KEY=${{ secrets.SECRET_KEY }},_DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }},_GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }},_HELPCENTER_GCS=${{ secrets.HELPCENTER_GCS }},_ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} .
+            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }},_REGION=${{ secrets.GOOGLE_CLOUD_REGION }},_NEON_DB_CONNECTION_STRING=${{ secrets.NEON_DB_CONNECTION_STRING }},_REDIS_URL=${{ secrets.REDIS_URL }},_SECRET_KEY=${{ secrets.SECRET_KEY }},_DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }},_GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }},_HELPCENTER_GCS=${{ secrets.HELPCENTER_GCS }},_ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} \
+            --async \
+            .
 
   # Deploy Editor API
   deploy-editor:
@@ -414,7 +417,10 @@ jobs:
           else
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
-      - run: |
+      - name: Deploy Editor API
+        run: |
           gcloud builds submit \
             --config cloudbuild/cloudbuild-editor.yaml \
-            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }},_REGION=${{ secrets.GOOGLE_CLOUD_REGION }},_NEON_DB_CONNECTION_STRING=${{ secrets.NEON_DB_CONNECTION_STRING }},_REDIS_URL=${{ secrets.REDIS_URL }},_SECRET_KEY=${{ secrets.SECRET_KEY }},_DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }},_GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }},_HELPCENTER_GCS=${{ secrets.HELPCENTER_GCS }},_ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} .
+            --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }},_REGION=${{ secrets.GOOGLE_CLOUD_REGION }},_NEON_DB_CONNECTION_STRING=${{ secrets.NEON_DB_CONNECTION_STRING }},_REDIS_URL=${{ secrets.REDIS_URL }},_SECRET_KEY=${{ secrets.SECRET_KEY }},_DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }},_GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }},_HELPCENTER_GCS=${{ secrets.HELPCENTER_GCS }},_ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} \
+            --async \
+            .
