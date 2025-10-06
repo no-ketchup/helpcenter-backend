@@ -30,7 +30,6 @@ steps:
 substitutions:
   _ENVIRONMENT: 'staging'
   _REGION: 'us-central1'
-  _GITHUB_SHA: 'latest'
   _NEON_DB_CONNECTION_STRING: ''
   _REDIS_URL: ''
   _SECRET_KEY: ''
