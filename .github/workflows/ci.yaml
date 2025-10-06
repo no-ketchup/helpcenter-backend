@@ -372,11 +372,14 @@ jobs:
           fi
       - name: Deploy GraphQL API
         run: |
-          gcloud builds submit \
+          echo "Starting GraphQL API deployment..."
+          BUILD_ID=$(gcloud builds submit \
             --config cloudbuild/cloudbuild-graphql.yaml \
             --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }},_REGION=${{ secrets.GOOGLE_CLOUD_REGION }},_NEON_DB_CONNECTION_STRING=${{ secrets.NEON_DB_CONNECTION_STRING }},_REDIS_URL=${{ secrets.REDIS_URL }},_SECRET_KEY=${{ secrets.SECRET_KEY }},_DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }},_GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }},_HELPCENTER_GCS=${{ secrets.HELPCENTER_GCS }},_ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} \
             --async \
-            .
+            . | grep "Created" | sed 's/.*builds\/\([^)]*\).*/\1/')
+          echo "Build started with ID: $BUILD_ID"
+          echo "Monitor progress at: https://console.cloud.google.com/cloud-build/builds/$BUILD_ID?project=${{ secrets.GOOGLE_CLOUD_PROJECT }}"
 
   # Deploy Editor API
   deploy-editor:
@@ -419,8 +422,11 @@ jobs:
           fi
       - name: Deploy Editor API
         run: |
-          gcloud builds submit \
+          echo "Starting Editor API deployment..."
+          BUILD_ID=$(gcloud builds submit \
             --config cloudbuild/cloudbuild-editor.yaml \
             --substitutions=_ENVIRONMENT=${{ steps.env.outputs.environment }},_GITHUB_SHA=${{ github.sha }},_REGION=${{ secrets.GOOGLE_CLOUD_REGION }},_NEON_DB_CONNECTION_STRING=${{ secrets.NEON_DB_CONNECTION_STRING }},_REDIS_URL=${{ secrets.REDIS_URL }},_SECRET_KEY=${{ secrets.SECRET_KEY }},_DEV_EDITOR_KEY=${{ secrets.DEV_EDITOR_KEY }},_GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }},_HELPCENTER_GCS=${{ secrets.HELPCENTER_GCS }},_ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }} \
             --async \
-            .
+            . | grep "Created" | sed 's/.*builds\/\([^)]*\).*/\1/')
+          echo "Build started with ID: $BUILD_ID"
+          echo "Monitor progress at: https://console.cloud.google.com/cloud-build/builds/$BUILD_ID?project=${{ secrets.GOOGLE_CLOUD_PROJECT }}"
