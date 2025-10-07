@@ -41,20 +41,26 @@ echo "Pushing Docker image..."
 docker push gcr.io/${PROJECT_ID}/helpcenter-graphql-api:${IMAGE_TAG}
 docker push gcr.io/${PROJECT_ID}/helpcenter-graphql-api:latest
 
-# Deploy to Cloud Run
 echo "Deploying to Cloud Run..."
 
-# Create env vars file to handle special characters
-cat > /tmp/env-vars.yaml << EOF
-ENVIRONMENT: "${ENVIRONMENT}"
-NEON_DB_CONNECTION_STRING: "${NEON_DB_CONNECTION_STRING}"
-REDIS_URL: "${REDIS_URL}"
-SECRET_KEY: "${SECRET_KEY}"
-DEV_EDITOR_KEY: "${DEV_EDITOR_KEY}"
-GCS_BUCKET_NAME: "${GCS_BUCKET_NAME}"
-HELPCENTER_GCS: "${HELPCENTER_GCS}"
-ALLOWED_ORIGINS: "${ALLOWED_ORIGINS}"
-EOF
+python3 << 'PYTHON_EOF'
+import yaml
+import os
+
+env_vars = {
+    'ENVIRONMENT': os.environ.get('ENVIRONMENT', ''),
+    'NEON_DB_CONNECTION_STRING': os.environ.get('NEON_DB_CONNECTION_STRING', ''),
+    'REDIS_URL': os.environ.get('REDIS_URL', ''),
+    'SECRET_KEY': os.environ.get('SECRET_KEY', ''),
+    'DEV_EDITOR_KEY': os.environ.get('DEV_EDITOR_KEY', ''),
+    'GCS_BUCKET_NAME': os.environ.get('GCS_BUCKET_NAME', ''),
+    'HELPCENTER_GCS': os.environ.get('HELPCENTER_GCS', ''),
+    'ALLOWED_ORIGINS': os.environ.get('ALLOWED_ORIGINS', ''),
+}
+
+with open('/tmp/env-vars.yaml', 'w') as f:
+    yaml.dump(env_vars, f, default_flow_style=False, allow_unicode=True)
+PYTHON_EOF
 
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/${PROJECT_ID}/helpcenter-graphql-api:${IMAGE_TAG} \
