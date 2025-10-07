@@ -3,36 +3,15 @@ name: HelpCenter Backend CI/CD (UV)
 on:
   push:
     branches: [ main, develop ]
-    paths:
-      - 'common/**'
-      - 'graphql_api/**'
-      - 'editor_api/**'
-      - 'tests/**'
-      - 'scripts/**'
-      - 'pyproject.toml'
-      - 'uv.lock'
-      - '.github/workflows/**'
-    paths-ignore:
-      - '**/*.md'
   pull_request:
     branches: [ main ]
-    paths:
-      - 'common/**'
-      - 'graphql_api/**'
-      - 'editor_api/**'
-      - 'tests/**'
-      - 'scripts/**'
-      - 'pyproject.toml'
-      - 'uv.lock'
-      - '.github/workflows/**'
-    paths-ignore:
-      - '**/*.md'
 
 env:
   PYTHON_VERSION: '3.11'
 
 permissions:
   contents: read
+  id-token: write
   security-events: write
 
 jobs:
@@ -48,9 +27,6 @@ jobs:
       workflows: ${{ steps.changes.outputs.workflows }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - id: changes
         uses: dorny/paths-filter@v2
         with:
@@ -68,192 +44,80 @@ jobs:
             workflows:
               - '.github/workflows/**'
 
-      - name: Debug changed outputs
-        run: |
-          echo "=== Changed Components ==="
-          echo "common:       ${{ steps.changes.outputs.common }}"
-          echo "graphql_api:  ${{ steps.changes.outputs.graphql_api }}"
-          echo "editor_api:   ${{ steps.changes.outputs.editor_api }}"
-          echo "tests:        ${{ steps.changes.outputs.tests }}"
-          echo "scripts:      ${{ steps.changes.outputs.scripts }}"
-          echo "workflows:    ${{ steps.changes.outputs.workflows }}"
-          echo "==========================="
-
-  # Lint + Test common components
-  test-common:
+  # Shared Postgres + Redis services
+  setup-services:
     runs-on: ubuntu-latest
-    needs: changes
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 3
+        ports: [ "5432:5432" ]
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 3
+        ports: [ "6379:6379" ]
+    outputs:
+      postgres-url: postgresql+asyncpg://test:test@localhost:5432/test_db
+      redis-url: redis://localhost:6379
+    steps:
+      - run: echo "Shared DB/Redis ready"
+
+  # Component test workflow calls
+  test-common:
+    uses: ./.github/workflows/test.yaml
+    needs: [changes, setup-services]
+    with:
+      module: common
+      test_path: tests/unit/
+    secrets: inherit
     if: |
       needs.changes.outputs.common == 'true' ||
       needs.changes.outputs.tests == 'true' ||
       needs.changes.outputs.workflows == 'true'
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports: [ "5432:5432" ]
+  test-graphql:
+    uses: ./.github/workflows/test.yaml
+    needs: [changes, setup-services, test-common]
+    with:
+      module: graphql_api
+      test_path: tests/integration/graphql_api/
+    secrets: inherit
+    if: |
+      needs.changes.outputs.graphql_api == 'true' ||
+      needs.changes.outputs.common == 'true' ||
+      needs.changes.outputs.tests == 'true' ||
+      needs.changes.outputs.workflows == 'true'
 
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports: [ "6379:6379" ]
+  test-editor:
+    uses: ./.github/workflows/test.yaml
+    needs: [changes, setup-services, test-common]
+    with:
+      module: editor_api
+      test_path: tests/integration/editor_api/
+    secrets: inherit
+    if: |
+      needs.changes.outputs.editor_api == 'true' ||
+      needs.changes.outputs.common == 'true' ||
+      needs.changes.outputs.tests == 'true' ||
+      needs.changes.outputs.workflows == 'true'
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-uv
-      - uses: actions/cache@v4
-        with:
-          path: |
-            .venv
-            ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-      - run: |
-          uv run flake8 common/ --max-line-length=100 --ignore=E203,W503,F821,E402
-          uv run black --check common/ --line-length=100
-          uv run isort --check-only common/ --profile black
-      - run: |
-          uv run pytest tests/unit/ -v --cov=common --cov-report=xml
-        env:
-          TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
-          REDIS_URL: redis://localhost:6379
-          ENVIRONMENT: test
-          SECRET_KEY: test-secret-key
-          DEV_EDITOR_KEY: test-editor-key
-          GCS_BUCKET_NAME: test-bucket
-          ALLOWED_ORIGINS: http://localhost:3000
-
-  test-graphql-api:
-    runs-on: ubuntu-latest
-    needs: [ changes, test-common ]
-    if: always() && (
-        needs.changes.outputs.graphql_api == 'true' ||
-        needs.changes.outputs.common == 'true' ||
-        needs.changes.outputs.tests == 'true' ||
-        needs.changes.outputs.workflows == 'true'
-      )
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports: [ "5432:5432" ]
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports: [ "6379:6379" ]
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-uv
-      - uses: actions/cache@v4
-        with:
-          path: |
-            .venv
-            ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-      - run: |
-          uv run flake8 graphql_api/ --max-line-length=100 --ignore=E203,W503,F821,E402
-          uv run black --check graphql_api/ --line-length=100
-          uv run isort --check-only graphql_api/ --profile black
-      - run: |
-          uv run pytest tests/integration/graphql_api/ -v --cov=graphql_api --cov-report=xml
-        env:
-          TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
-          REDIS_URL: redis://localhost:6379
-          ENVIRONMENT: test
-          SECRET_KEY: test-secret-key
-          DEV_EDITOR_KEY: test-editor-key
-          GCS_BUCKET_NAME: test-bucket
-          ALLOWED_ORIGINS: http://localhost:3000
-
-  test-editor-api:
-    runs-on: ubuntu-latest
-    needs: [ changes, test-common ]
-    if: always() && (
-        needs.changes.outputs.editor_api == 'true' ||
-        needs.changes.outputs.common == 'true' ||
-        needs.changes.outputs.tests == 'true' ||
-        needs.changes.outputs.workflows == 'true'
-      )
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports: [ "5432:5432" ]
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports: [ "6379:6379" ]
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-uv
-      - uses: actions/cache@v4
-        with:
-          path: |
-            .venv
-            ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-      - run: |
-          uv run flake8 editor_api/ --max-line-length=100 --ignore=E203,W503,F821,E402
-          uv run black --check editor_api/ --line-length=100
-          uv run isort --check-only editor_api/ --profile black
-      - run: |
-          uv run pytest tests/integration/editor_api/ -v --cov=editor_api --cov-report=xml
-        env:
-          TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
-          REDIS_URL: redis://localhost:6379
-          ENVIRONMENT: test
-          SECRET_KEY: test-secret-key
-          DEV_EDITOR_KEY: test-editor-key
-          GCS_BUCKET_NAME: test-bucket
-          ALLOWED_ORIGINS: http://localhost:3000
-
+  # Integration test aggregate
   test-integration:
     runs-on: ubuntu-latest
-    needs: [ changes, test-common, test-graphql-api, test-editor-api ]
+    needs: [changes, setup-services, test-common, test-graphql, test-editor]
     if: always()
-
     services:
       postgres:
         image: postgres:16
@@ -261,31 +125,13 @@ jobs:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
           POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports: [ "5432:5432" ]
-
       redis:
         image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports: [ "6379:6379" ]
-
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-uv
-      - uses: actions/cache@v4
-        with:
-          path: |
-            .venv
-            ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
       - run: uv run python -m alembic upgrade head
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
@@ -300,15 +146,10 @@ jobs:
           GCS_BUCKET_NAME: test-bucket
           ALLOWED_ORIGINS: http://localhost:3000
 
+  # Always-on Security scan
   security:
     runs-on: ubuntu-latest
-    needs: changes
-    if: |
-      needs.changes.outputs.common == 'true' ||
-      needs.changes.outputs.graphql_api == 'true' ||
-      needs.changes.outputs.editor_api == 'true' ||
-      needs.changes.outputs.workflows == 'true'
-
+    needs: [changes]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-uv
@@ -318,125 +159,23 @@ jobs:
             .venv
             ~/.cache/uv
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-      - run: uv run bandit -r common/ graphql_api/ editor_api/ -f json -o bandit-report.json || true
-      - uses: actions/upload-artifact@v4
-        if: always()
+      - name: Run Bandit security scan
+        run: uv run bandit -r common/ graphql_api/ editor_api/ -f sarif -o bandit.sarif || true
+      - uses: github/codeql-action/upload-sarif@v3
         with:
-          name: security-report
-          path: bandit-report.json
+          sarif_file: bandit.sarif
 
+  # Deployments
   deploy-graphql:
-    runs-on: ubuntu-latest
-    environment: prod
-    needs: [ changes, test-common, test-graphql-api, test-integration, security ]
-    if: |
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      (
-        needs.changes.outputs.graphql_api == 'true' ||
-        needs.changes.outputs.common == 'true' ||
-        needs.changes.outputs.scripts == 'true' ||
-        needs.changes.outputs.workflows == 'true'
-      ) &&
-      (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
-      (needs.test-graphql-api.result == 'success' || needs.test-graphql-api.result == 'skipped') &&
-      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
-      (needs.security.result == 'success' || needs.security.result == 'skipped')
-    steps:
-      - uses: actions/checkout@v4
-      - name: Debug - Check HELPCENTER_CICD secret
-        run: |
-          echo "Checking HELPCENTER_CICD secret..."
-          if [ -z "${{ secrets.HELPCENTER_CICD }}" ]; then
-            echo "HELPCENTER_CICD secret is empty or not set"
-            echo "This will cause authentication to fail"
-            exit 1
-          else
-            echo "HELPCENTER_CICD secret is set (length: ${#HELPCENTER_CICD})"
-          fi
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.HELPCENTER_CICD }}
-          create_credentials_file: true
-          export_environment_variables: true
-      - uses: google-github-actions/setup-gcloud@v2
-      - id: env
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "environment=prod" >> $GITHUB_OUTPUT
-          else
-            echo "environment=staging" >> $GITHUB_OUTPUT
-          fi
-      - name: Deploy GraphQL API
-        env:
-          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
-          GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
-          NEON_DB_CONNECTION_STRING: ${{ secrets.NEON_DB_CONNECTION_STRING }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
-          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
-          HELPCENTER_GCS: ${{ secrets.HELPCENTER_GCS }}
-          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
-        run: |
-          echo "Starting GraphQL API deployment..."
-          ./scripts/deploy-cloud-run.sh ${{ steps.env.outputs.environment }} ${{ github.sha }}
+    needs: [test-common, test-graphql, test-integration, security]
+    uses: ./.github/workflows/cloudrun-deploy.yaml
+    with:
+      service: graphql_api
+    secrets: inherit
 
   deploy-editor:
-    runs-on: ubuntu-latest
-    environment: prod
-    needs: [ changes, test-common, test-editor-api, test-integration, security ]
-    if: |
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      (
-        needs.changes.outputs.editor_api == 'true' ||
-        needs.changes.outputs.common == 'true' ||
-        needs.changes.outputs.scripts == 'true' ||
-        needs.changes.outputs.workflows == 'true'
-      ) &&
-      (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
-      (needs.test-editor-api.result == 'success' || needs.test-editor-api.result == 'skipped') &&
-      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
-      (needs.security.result == 'success' || needs.security.result == 'skipped')
-    steps:
-      - uses: actions/checkout@v4
-      - name: Debug - Check HELPCENTER_CICD secret
-        run: |
-          echo "Checking HELPCENTER_CICD secret..."
-          if [ -z "${{ secrets.HELPCENTER_CICD }}" ]; then
-            echo "HELPCENTER_CICD secret is empty or not set"
-            echo "This will cause authentication to fail"
-            exit 1
-          else
-            echo "HELPCENTER_CICD secret is set (length: ${#HELPCENTER_CICD})"
-          fi
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.HELPCENTER_CICD }}
-          create_credentials_file: true
-          export_environment_variables: true
-      - uses: google-github-actions/setup-gcloud@v2
-      - id: env
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "environment=prod" >> $GITHUB_OUTPUT
-          else
-            echo "environment=staging" >> $GITHUB_OUTPUT
-          fi
-      - name: Deploy Editor API
-        env:
-          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
-          GOOGLE_CLOUD_REGION: ${{ secrets.GOOGLE_CLOUD_REGION }}
-          NEON_DB_CONNECTION_STRING: ${{ secrets.NEON_DB_CONNECTION_STRING }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DEV_EDITOR_KEY: ${{ secrets.DEV_EDITOR_KEY }}
-          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
-          HELPCENTER_GCS: ${{ secrets.HELPCENTER_GCS }}
-          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
-        run: |
-          echo "Starting Editor API deployment..."
-          ./scripts/deploy-editor.sh ${{ steps.env.outputs.environment }} ${{ github.sha }}
+    needs: [test-common, test-editor, test-integration, security]
+    uses: ./.github/workflows/cloudrun-deploy.yaml
+    with:
+      service: editor_api
+    secrets: inherit
