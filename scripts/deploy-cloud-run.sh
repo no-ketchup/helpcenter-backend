@@ -34,6 +34,9 @@ docker build -f Dockerfile.uv \
   --build-arg ENVIRONMENT=${ENVIRONMENT} \
   .
 
+echo "Configuring Docker for GCR..."
+gcloud auth configure-docker --quiet
+
 echo "Pushing Docker image..."
 docker push gcr.io/${PROJECT_ID}/helpcenter-graphql-api:${IMAGE_TAG}
 docker push gcr.io/${PROJECT_ID}/helpcenter-graphql-api:latest

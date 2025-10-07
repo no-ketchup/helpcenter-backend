@@ -28,14 +28,7 @@ gcloud functions deploy ${FUNCTION_NAME} \
   --trigger-http \
   --allow-unauthenticated \
   --service-account=helpcenter-runtime@${PROJECT_ID}.iam.gserviceaccount.com \
-  --set-env-vars "ENVIRONMENT=${ENVIRONMENT}" \
-  --set-env-vars "NEON_DB_CONNECTION_STRING=${NEON_DB_CONNECTION_STRING}" \
-  --set-env-vars "REDIS_URL=${REDIS_URL}" \
-  --set-env-vars "SECRET_KEY=${SECRET_KEY}" \
-  --set-env-vars "DEV_EDITOR_KEY=${DEV_EDITOR_KEY}" \
-  --set-env-vars "GCS_BUCKET_NAME=${GCS_BUCKET_NAME}" \
-  --set-env-vars "HELPCENTER_GCS=${HELPCENTER_GCS}" \
-  --set-env-vars "ALLOWED_ORIGINS=${ALLOWED_ORIGINS}" \
+  --set-env-vars "ENVIRONMENT=${ENVIRONMENT},NEON_DB_CONNECTION_STRING=${NEON_DB_CONNECTION_STRING},REDIS_URL=${REDIS_URL},SECRET_KEY=${SECRET_KEY},DEV_EDITOR_KEY=${DEV_EDITOR_KEY},GCS_BUCKET_NAME=${GCS_BUCKET_NAME},HELPCENTER_GCS=${HELPCENTER_GCS},ALLOWED_ORIGINS=${ALLOWED_ORIGINS}" \
   --memory=1Gi \
   --timeout=300s \
   --max-instances=10 \
