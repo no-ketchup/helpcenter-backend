@@ -9,8 +9,6 @@ on:
       test_path:
         required: true
         type: string
-    secrets:
-      inherit: true
 
 jobs:
   test:
