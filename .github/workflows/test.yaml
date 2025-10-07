@@ -41,6 +41,13 @@ jobs:
           uv run black --check ${{ inputs.module }}/ --line-length=100
           uv run isort --check-only ${{ inputs.module }}/ --profile black
 
+      - name: Run migrations for integration tests
+        if: inputs.module != 'common'
+        run: uv run python -m alembic upgrade head
+        env:
+          TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
+          ENVIRONMENT: test
+
       - name: Run tests for ${{ inputs.module }}
         run: |
           uv run pytest ${{ inputs.test_path }} -v --cov=${{ inputs.module }} --cov-report=xml
