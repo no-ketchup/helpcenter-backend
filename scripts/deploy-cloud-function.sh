@@ -42,7 +42,7 @@ PYTHON_EOF
 gcloud functions deploy ${FUNCTION_NAME} \
   --gen2 \
   --runtime=python311 \
-  --source=. \
+  --source=editor_api \
   --entry-point=editor_api \
   --trigger-http \
   --allow-unauthenticated \
