@@ -6,7 +6,8 @@ on:
       service:
         required: true
         type: string
-    secrets: inherit
+    secrets:
+      inherit: true
 
 jobs:
   deploy:
