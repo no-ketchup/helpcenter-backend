@@ -343,6 +343,7 @@ jobs:
         needs.changes.outputs.graphql_api == 'true' ||
         needs.changes.outputs.common == 'true' ||
         needs.changes.outputs.cloudbuild == 'true' ||
+        needs.changes.outputs.scripts == 'true' ||
         needs.changes.outputs.workflows == 'true'
       ) &&
       (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
@@ -402,6 +403,7 @@ jobs:
         needs.changes.outputs.editor_api == 'true' ||
         needs.changes.outputs.common == 'true' ||
         needs.changes.outputs.cloudbuild == 'true' ||
+        needs.changes.outputs.scripts == 'true' ||
         needs.changes.outputs.workflows == 'true'
       ) &&
       (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
