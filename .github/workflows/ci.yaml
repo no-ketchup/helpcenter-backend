@@ -443,4 +443,4 @@ jobs:
           ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
         run: |
           echo "Starting Editor API deployment..."
-          ./scripts/deploy-cloud-function.sh ${{ steps.env.outputs.environment }}
+          ./scripts/deploy-editor.sh ${{ steps.env.outputs.environment }} ${{ github.sha }}
