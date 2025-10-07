@@ -43,26 +43,34 @@ docker push gcr.io/${PROJECT_ID}/helpcenter-graphql-api:latest
 
 # Deploy to Cloud Run
 echo "Deploying to Cloud Run..."
+
+# Create env vars file to handle special characters
+cat > /tmp/env-vars.yaml << EOF
+ENVIRONMENT: "${ENVIRONMENT}"
+NEON_DB_CONNECTION_STRING: "${NEON_DB_CONNECTION_STRING}"
+REDIS_URL: "${REDIS_URL}"
+SECRET_KEY: "${SECRET_KEY}"
+DEV_EDITOR_KEY: "${DEV_EDITOR_KEY}"
+GCS_BUCKET_NAME: "${GCS_BUCKET_NAME}"
+HELPCENTER_GCS: "${HELPCENTER_GCS}"
+ALLOWED_ORIGINS: "${ALLOWED_ORIGINS}"
+EOF
+
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/${PROJECT_ID}/helpcenter-graphql-api:${IMAGE_TAG} \
   --platform managed \
   --region ${REGION} \
   --allow-unauthenticated \
   --service-account=helpcenter-runtime@${PROJECT_ID}.iam.gserviceaccount.com \
-  --set-env-vars "ENVIRONMENT=${ENVIRONMENT}" \
-  --set-env-vars "NEON_DB_CONNECTION_STRING=${NEON_DB_CONNECTION_STRING}" \
-  --set-env-vars "REDIS_URL=${REDIS_URL}" \
-  --set-env-vars "SECRET_KEY=${SECRET_KEY}" \
-  --set-env-vars "DEV_EDITOR_KEY=${DEV_EDITOR_KEY}" \
-  --set-env-vars "GCS_BUCKET_NAME=${GCS_BUCKET_NAME}" \
-  --set-env-vars "HELPCENTER_GCS=${HELPCENTER_GCS}" \
-  --set-env-vars "ALLOWED_ORIGINS=${ALLOWED_ORIGINS}" \
+  --env-vars-file=/tmp/env-vars.yaml \
   --memory 1Gi \
   --cpu 1 \
   --min-instances 0 \
   --max-instances 10 \
   --timeout 300 \
   --concurrency 100
+
+rm -f /tmp/env-vars.yaml
 
 echo "Deployment complete!"
 echo "Service URL: https://${SERVICE_NAME}-${REGION}.run.app"
