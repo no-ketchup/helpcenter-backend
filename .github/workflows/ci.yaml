@@ -338,12 +338,17 @@ jobs:
     needs: [ changes, test-common, test-graphql-api, test-integration, security ]
     if: |
       github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
       (
         needs.changes.outputs.graphql_api == 'true' ||
         needs.changes.outputs.common == 'true' ||
         needs.changes.outputs.cloudbuild == 'true' ||
         needs.changes.outputs.workflows == 'true'
-      )
+      ) &&
+      (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
+      (needs.test-graphql-api.result == 'success' || needs.test-graphql-api.result == 'skipped') &&
+      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
+      (needs.security.result == 'success' || needs.security.result == 'skipped')
     steps:
       - uses: actions/checkout@v4
       - name: Debug - Check HELPCENTER_CICD secret
@@ -392,12 +397,17 @@ jobs:
     needs: [ changes, test-common, test-editor-api, test-integration, security ]
     if: |
       github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
       (
         needs.changes.outputs.editor_api == 'true' ||
         needs.changes.outputs.common == 'true' ||
         needs.changes.outputs.cloudbuild == 'true' ||
         needs.changes.outputs.workflows == 'true'
-      )
+      ) &&
+      (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
+      (needs.test-editor-api.result == 'success' || needs.test-editor-api.result == 'skipped') &&
+      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
+      (needs.security.result == 'success' || needs.security.result == 'skipped')
     steps:
       - uses: actions/checkout@v4
       - name: Debug - Check HELPCENTER_CICD secret
