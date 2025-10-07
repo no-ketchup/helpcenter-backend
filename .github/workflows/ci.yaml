@@ -12,7 +12,8 @@ on:
       - 'pyproject.toml'
       - 'uv.lock'
       - '.github/workflows/**'
-      - 'cloudbuild/**'
+    paths-ignore:
+      - '**/*.md'
   pull_request:
     branches: [ main ]
     paths:
@@ -24,7 +25,8 @@ on:
       - 'pyproject.toml'
       - 'uv.lock'
       - '.github/workflows/**'
-      - 'cloudbuild/**'
+    paths-ignore:
+      - '**/*.md'
 
 env:
   PYTHON_VERSION: '3.11'
@@ -44,7 +46,6 @@ jobs:
       tests: ${{ steps.changes.outputs.tests }}
       scripts: ${{ steps.changes.outputs.scripts }}
       workflows: ${{ steps.changes.outputs.workflows }}
-      cloudbuild: ${{ steps.changes.outputs.cloudbuild }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,8 +67,6 @@ jobs:
               - 'scripts/**'
             workflows:
               - '.github/workflows/**'
-            cloudbuild:
-              - 'cloudbuild/**'
 
       - name: Debug changed outputs
         run: |
@@ -78,7 +77,6 @@ jobs:
           echo "tests:        ${{ steps.changes.outputs.tests }}"
           echo "scripts:      ${{ steps.changes.outputs.scripts }}"
           echo "workflows:    ${{ steps.changes.outputs.workflows }}"
-          echo "cloudbuild:   ${{ steps.changes.outputs.cloudbuild }}"
           echo "==========================="
 
   # Lint + Test common components
@@ -337,7 +335,6 @@ jobs:
       (
         needs.changes.outputs.graphql_api == 'true' ||
         needs.changes.outputs.common == 'true' ||
-        needs.changes.outputs.cloudbuild == 'true' ||
         needs.changes.outputs.scripts == 'true' ||
         needs.changes.outputs.workflows == 'true'
       ) &&
@@ -396,7 +393,6 @@ jobs:
       (
         needs.changes.outputs.editor_api == 'true' ||
         needs.changes.outputs.common == 'true' ||
-        needs.changes.outputs.cloudbuild == 'true' ||
         needs.changes.outputs.scripts == 'true' ||
         needs.changes.outputs.workflows == 'true'
       ) &&
