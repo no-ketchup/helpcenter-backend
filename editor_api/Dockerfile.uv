@@ -7,7 +7,7 @@ RUN pip install --no-cache-dir uv
 WORKDIR /code
 
 # Copy lock + metadata only
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 COPY common/pyproject.toml ./common/
 COPY editor_api/pyproject.toml ./editor_api/
 
@@ -29,4 +29,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
 # Default command
-CMD ["uv", "run", "functions-framework", "--target=editor_api", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uv", "run", "uvicorn", "editor_api.main:app", "--host", "0.0.0.0", "--port", "8080"]

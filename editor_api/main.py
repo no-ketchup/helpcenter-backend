@@ -1,11 +1,10 @@
 """
-Help Center Editor API - Cloud Function
+Help Center Editor API - Cloud Run
 A dedicated service for editor operations (REST API)
 """
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from functions_framework import http
 
 from common.core.logger import setup_logging
 from common.core.middleware import RequestLoggingMiddleware
@@ -71,10 +70,3 @@ async def root():
             "media-editor": "/media-editor",
         },
     }
-
-
-# Cloud Function entry point
-@http
-def editor_api(request):
-    """Cloud Function entry point."""
-    return app(request.environ, lambda *args: None)
