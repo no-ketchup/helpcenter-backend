@@ -52,10 +52,13 @@ jobs:
       module: common
       test_path: tests/unit/
     secrets: inherit
-    if: |
-      needs.changes.outputs.common == 'true' ||
-      needs.changes.outputs.tests == 'true' ||
-      needs.changes.outputs.workflows == 'true'
+    if: >
+      always() &&
+      (
+        needs.changes.outputs.common == 'true' ||
+        needs.changes.outputs.tests == 'true' ||
+        needs.changes.outputs.workflows == 'true'
+      )
 
   test-graphql:
     uses: ./.github/workflows/test.yaml
@@ -64,11 +67,14 @@ jobs:
       module: graphql_api
       test_path: tests/integration/graphql_api/
     secrets: inherit
-    if: |
-      needs.changes.outputs.graphql_api == 'true' ||
-      needs.changes.outputs.common == 'true' ||
-      needs.changes.outputs.tests == 'true' ||
-      needs.changes.outputs.workflows == 'true'
+    if: >
+      always() &&
+      (
+        needs.changes.outputs.graphql_api == 'true' ||
+        needs.changes.outputs.common == 'true' ||
+        needs.changes.outputs.tests == 'true' ||
+        needs.changes.outputs.workflows == 'true'
+      )
 
   test-editor:
     uses: ./.github/workflows/test.yaml
@@ -77,11 +83,14 @@ jobs:
       module: editor_api
       test_path: tests/integration/editor_api/
     secrets: inherit
-    if: |
-      needs.changes.outputs.editor_api == 'true' ||
-      needs.changes.outputs.common == 'true' ||
-      needs.changes.outputs.tests == 'true' ||
-      needs.changes.outputs.workflows == 'true'
+    if: >
+      always() &&
+      (
+        needs.changes.outputs.editor_api == 'true' ||
+        needs.changes.outputs.common == 'true' ||
+        needs.changes.outputs.tests == 'true' ||
+        needs.changes.outputs.workflows == 'true'
+      )
 
   test-integration:
     runs-on: ubuntu-latest
