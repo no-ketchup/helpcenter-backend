@@ -55,6 +55,8 @@ jobs:
       always() &&
       (
         needs.changes.outputs.common == 'true' ||
+        needs.changes.outputs.graphql_api == 'true' ||
+        needs.changes.outputs.editor_api == 'true' ||
         needs.changes.outputs.tests == 'true' ||
         needs.changes.outputs.workflows == 'true'
       )
