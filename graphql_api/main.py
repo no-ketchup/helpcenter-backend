@@ -113,11 +113,13 @@ graphql_app = GraphQLRouter(
     context_getter=get_context,
 )
 
+
 # Explicit OPTIONS handler for GraphQL endpoint to fix CORS preflight
 @app.options("/graphql")
 async def graphql_options():
     """Handle CORS preflight requests for GraphQL endpoint."""
     return {"message": "OK"}
+
 
 # Mount GraphQL AFTER the OPTIONS handler
 app.include_router(graphql_app, prefix="/graphql")
