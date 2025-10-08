@@ -15,7 +15,6 @@ permissions:
   security-events: write
 
 jobs:
-  # Detect changes
   changes:
     runs-on: ubuntu-latest
     outputs:
