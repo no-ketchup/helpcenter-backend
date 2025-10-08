@@ -114,17 +114,14 @@ graphql_app = GraphQLRouter(
 )
 
 
-# Explicit handlers for GraphQL endpoint to ensure all methods work
 @app.options("/graphql")
 async def graphql_options():
-    """Handle CORS preflight requests for GraphQL endpoint."""
     return {"message": "OK"}
 
-# Mount GraphQL router (handles GET and POST automatically)
+
 app.include_router(graphql_app, prefix="/graphql")
 
 
-# Health check (optional rate limit)
 @app.get("/health")
 @limiter.limit("1000/hour")
 async def health_check(request: Request):
