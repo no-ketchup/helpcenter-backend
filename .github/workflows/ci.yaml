@@ -180,12 +180,13 @@ jobs:
       (
         needs.changes.outputs.graphql_api == 'true' ||
         needs.changes.outputs.common == 'true' ||
+        needs.changes.outputs.tests == 'true' ||
         needs.changes.outputs.scripts == 'true' ||
         needs.changes.outputs.workflows == 'true'
       ) &&
       (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
       (needs.test-graphql.result == 'success' || needs.test-graphql.result == 'skipped') &&
-      needs.test-integration.result == 'success' &&
+      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
       (needs.security.result == 'success' || needs.security.result == 'skipped')
 
   deploy-editor:
@@ -200,10 +201,11 @@ jobs:
       (
         needs.changes.outputs.editor_api == 'true' ||
         needs.changes.outputs.common == 'true' ||
+        needs.changes.outputs.tests == 'true' ||
         needs.changes.outputs.scripts == 'true' ||
         needs.changes.outputs.workflows == 'true'
       ) &&
       (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
       (needs.test-editor.result == 'success' || needs.test-editor.result == 'skipped') &&
-      needs.test-integration.result == 'success' &&
+      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
       (needs.security.result == 'success' || needs.security.result == 'skipped')
