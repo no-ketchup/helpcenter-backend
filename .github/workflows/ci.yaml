@@ -44,7 +44,7 @@ jobs:
             workflows:
               - '.github/workflows/**'
 
-  # Component test workflow
+  # Component test
   test-common:
     uses: ./.github/workflows/test.yaml
     needs: changes
