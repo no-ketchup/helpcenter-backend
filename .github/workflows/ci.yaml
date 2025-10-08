@@ -15,15 +15,18 @@ permissions:
   security-events: write
 
 jobs:
+  # ------------------------------------
+  # Detect file changes
+  # ------------------------------------
   changes:
     runs-on: ubuntu-latest
     outputs:
-      common: ${{ steps.changes.outputs.common }}
-      graphql_api: ${{ steps.changes.outputs.graphql_api }}
-      editor_api: ${{ steps.changes.outputs.editor_api }}
-      tests: ${{ steps.changes.outputs.tests }}
-      scripts: ${{ steps.changes.outputs.scripts }}
-      workflows: ${{ steps.changes.outputs.workflows }}
+      common: ${{ steps.changes.outputs.common || 'false' }}
+      graphql_api: ${{ steps.changes.outputs.graphql_api || 'false' }}
+      editor_api: ${{ steps.changes.outputs.editor_api || 'false' }}
+      tests: ${{ steps.changes.outputs.tests || 'false' }}
+      scripts: ${{ steps.changes.outputs.scripts || 'false' }}
+      workflows: ${{ steps.changes.outputs.workflows || 'false' }}
     steps:
       - uses: actions/checkout@v4
       - id: changes
@@ -43,7 +46,9 @@ jobs:
             workflows:
               - '.github/workflows/**'
 
-  # Component test
+  # ------------------------------------
+  # Unit test (common)
+  # ------------------------------------
   test-common:
     uses: ./.github/workflows/test.yaml
     needs: changes
@@ -61,6 +66,9 @@ jobs:
         needs.changes.outputs.workflows == 'true'
       )
 
+  # ------------------------------------
+  # Integration tests
+  # ------------------------------------
   test-graphql:
     uses: ./.github/workflows/test.yaml
     needs: [changes, test-common]
@@ -93,9 +101,12 @@ jobs:
         needs.changes.outputs.workflows == 'true'
       )
 
+  # ------------------------------------
+  # Full integration (Postgres + Redis)
+  # ------------------------------------
   test-integration:
     runs-on: ubuntu-latest
-    needs: [ changes, test-common, test-graphql, test-editor ]
+    needs: [changes, test-common, test-graphql, test-editor]
     if: always()
 
     services:
@@ -130,11 +141,13 @@ jobs:
             .venv
             ~/.cache/uv
           key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
-      - run: uv run python -m alembic upgrade head
+      - name: Run DB migrations
+        run: uv run python -m alembic upgrade head
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           ENVIRONMENT: test
-      - run: uv run pytest tests/integration/ -v
+      - name: Run integration tests
+        run: uv run pytest tests/integration/ -v
         env:
           TEST_DATABASE_URL_ASYNC: postgresql+asyncpg://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
@@ -144,14 +157,20 @@ jobs:
           GCS_BUCKET_NAME: test-bucket
           ALLOWED_ORIGINS: http://localhost:3000
 
+  # ------------------------------------
+  # Security scan
+  # ------------------------------------
   security:
     runs-on: ubuntu-latest
     needs: changes
-    if: |
-      needs.changes.outputs.common == 'true' ||
-      needs.changes.outputs.graphql_api == 'true' ||
-      needs.changes.outputs.editor_api == 'true' ||
-      needs.changes.outputs.workflows == 'true'
+    if: >
+      always() &&
+      (
+        needs.changes.outputs.common == 'true' ||
+        needs.changes.outputs.graphql_api == 'true' ||
+        needs.changes.outputs.editor_api == 'true' ||
+        needs.changes.outputs.workflows == 'true'
+      )
 
     steps:
       - uses: actions/checkout@v4
@@ -169,14 +188,16 @@ jobs:
         with:
           sarif_file: bandit.sarif
 
-  # Deployments
+  # ------------------------------------
+  # Deploy GraphQL API
+  # ------------------------------------
   deploy-graphql:
     needs: [changes, test-common, test-graphql, test-integration, security]
     uses: ./.github/workflows/cloudrun-deploy.yaml
     with:
       service: graphql_api
     secrets: inherit
-    if: |
+    if: >
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       (
@@ -186,18 +207,23 @@ jobs:
         needs.changes.outputs.scripts == 'true' ||
         needs.changes.outputs.workflows == 'true'
       ) &&
-      (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
-      (needs.test-graphql.result == 'success' || needs.test-graphql.result == 'skipped') &&
-      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
-      (needs.security.result == 'success' || needs.security.result == 'skipped')
+      (
+        (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
+        (needs.test-graphql.result == 'success' || needs.test-graphql.result == 'skipped') &&
+        (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
+        (needs.security.result == 'success' || needs.security.result == 'skipped')
+      )
 
+  # ------------------------------------
+  # Deploy Editor API
+  # ------------------------------------
   deploy-editor:
     needs: [changes, test-common, test-editor, test-integration, security]
     uses: ./.github/workflows/cloudrun-deploy.yaml
     with:
       service: editor_api
     secrets: inherit
-    if: |
+    if: >
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       (
@@ -207,7 +233,9 @@ jobs:
         needs.changes.outputs.scripts == 'true' ||
         needs.changes.outputs.workflows == 'true'
       ) &&
-      (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
-      (needs.test-editor.result == 'success' || needs.test-editor.result == 'skipped') &&
-      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
-      (needs.security.result == 'success' || needs.security.result == 'skipped')
+      (
+        (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
+        (needs.test-editor.result == 'success' || needs.test-editor.result == 'skipped') &&
+        (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
+        (needs.security.result == 'success' || needs.security.result == 'skipped')
+      )
