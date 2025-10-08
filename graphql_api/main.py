@@ -120,8 +120,7 @@ async def graphql_options():
     """Handle CORS preflight requests for GraphQL endpoint."""
     return {"message": "OK"}
 
-
-# Mount GraphQL AFTER the OPTIONS handler
+# Mount GraphQL router (handles GET and POST automatically)
 app.include_router(graphql_app, prefix="/graphql")
 
 
