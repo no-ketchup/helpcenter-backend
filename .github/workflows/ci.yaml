@@ -177,7 +177,7 @@ jobs:
       ) &&
       (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
       (needs.test-graphql.result == 'success' || needs.test-graphql.result == 'skipped') &&
-      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
+      needs.test-integration.result == 'success' &&
       (needs.security.result == 'success' || needs.security.result == 'skipped')
 
   deploy-editor:
@@ -197,5 +197,5 @@ jobs:
       ) &&
       (needs.test-common.result == 'success' || needs.test-common.result == 'skipped') &&
       (needs.test-editor.result == 'success' || needs.test-editor.result == 'skipped') &&
-      (needs.test-integration.result == 'success' || needs.test-integration.result == 'skipped') &&
+      needs.test-integration.result == 'success' &&
       (needs.security.result == 'success' || needs.security.result == 'skipped')
