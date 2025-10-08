@@ -35,11 +35,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Logging + Rate limiting
-app.add_middleware(RequestLoggingMiddleware)
-setup_rate_limiting(app)
-
-# CORS middleware
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -47,6 +43,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Logging + Rate limiting
+app.add_middleware(RequestLoggingMiddleware)
+setup_rate_limiting(app)
 
 # ------------------------------
 # Exception handlers
