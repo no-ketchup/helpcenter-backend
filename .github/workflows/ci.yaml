@@ -165,6 +165,7 @@ jobs:
     uses: ./.github/workflows/cloudrun-deploy.yaml
     with:
       service: graphql_api
+    secrets: inherit
     if: |
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
@@ -184,6 +185,7 @@ jobs:
     uses: ./.github/workflows/cloudrun-deploy.yaml
     with:
       service: editor_api
+    secrets: inherit
     if: |
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
